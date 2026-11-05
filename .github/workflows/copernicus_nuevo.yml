@@ -1,0 +1,52 @@
+name: Procesar oleaje Copernicus
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  procesar-oleaje:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar herramientas
+        run: pip install copernicusmarine xarray netCDF4
+
+      - name: Descargar datos de oleaje
+        env:
+          COPERNICUSMARINE_SERVICE_USERNAME: ${{ secrets.COPERNICUS_USERNAME }}
+          COPERNICUSMARINE_SERVICE_PASSWORD: ${{ secrets.COPERNICUS_PASSWORD }}
+        run: |
+          copernicusmarine subset \
+            --dataset-id cmems_mod_glo_wav_anfc_0.083deg_PT3H-i \
+            --variable VHM0 \
+            --variable VMDR \
+            --variable VTPK \
+            --minimum-longitude -16.10 \
+            --maximum-longitude -15.70 \
+            --minimum-latitude 23.50 \
+            --maximum-latitude 23.90 \
+            --start-datetime "2026-11-05 12:00:00" \
+            --end-datetime "2026-11-05 18:00:00" \
+            --output-directory . \
+            --output-filename prueba_dakhla_global \
+            --file-format netcdf
+
+      - name: Procesar datos a JSON
+        run: python scripts/procesar_oleaje.py
+
+      - name: Guardar resultados
+        uses: actions/upload-artifact@v4
+        with:
+          name: oleaje-dakhla-json
+          path: oleaje_dakhla.json
