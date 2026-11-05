@@ -1,0 +1,53 @@
+
+name: Prueba Copernicus Marine
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probar-copernicus:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Copernicus Marine
+        run: pip install copernicusmarine
+
+      - name: Comprobar credenciales
+        env:
+          COPERNICUSMARINE_SERVICE_USERNAME: ${{ secrets.COPERNICUS_USERNAME }}
+          COPERNICUSMARINE_SERVICE_PASSWORD: ${{ secrets.COPERNICUS_PASSWORD }}
+        run: copernicusmarine login --check-credentials-valid
+
+      - name: Descargar prueba de oleaje de Dakhla
+        env:
+          COPERNICUSMARINE_SERVICE_USERNAME: ${{ secrets.COPERNICUS_USERNAME }}
+          COPERNICUSMARINE_SERVICE_PASSWORD: ${{ secrets.COPERNICUS_PASSWORD }}
+        run: |
+          copernicusmarine subset \
+            --dataset-id cmems_mod_glo_wav_anfc_0.083deg_PT3H-i \
+            --variable VHM0 \
+            --variable VMDR \
+            --variable VTPK \
+            --minimum-longitude -16.10 \
+            --maximum-longitude -15.70 \
+            --minimum-latitude 23.50 \
+            --maximum-latitude 23.90 \
+            --start-datetime "2026-11-05 12:00:00" \
+            --end-datetime "2026-11-05 18:00:00" \
+            --output-directory . \
+            --output-filename prueba_dakhla_global \
+            --file-format netcdf
+
+      - name: Guardar archivo de prueba
+        uses: actions/upload-artifact@v4
+        with:
+          name: datos-oleaje-dakhla
+          path: prueba_dakhla_global.nc
