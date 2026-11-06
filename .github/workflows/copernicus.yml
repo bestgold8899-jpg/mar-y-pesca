@@ -8,25 +8,22 @@ permissions:
   contents: read
 
 jobs:
-  probar-copernicus:
+  oleaje:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
       - name: Preparar Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Instalar Copernicus Marine
-        run: pip install copernicusmarine
+      - name: Instalar herramientas
+        run: pip install copernicusmarine xarray netCDF4
 
-      - name: Comprobar credenciales
-        env:
-          COPERNICUSMARINE_SERVICE_USERNAME: ${{ secrets.COPERNICUS_USERNAME }}
-          COPERNICUSMARINE_SERVICE_PASSWORD: ${{ secrets.COPERNICUS_PASSWORD }}
-        run: copernicusmarine login --check-credentials-valid
-
-      - name: Descargar prueba de oleaje de Dakhla
+      - name: Descargar datos de oleaje
         env:
           COPERNICUSMARINE_SERVICE_USERNAME: ${{ secrets.COPERNICUS_USERNAME }}
           COPERNICUSMARINE_SERVICE_PASSWORD: ${{ secrets.COPERNICUS_PASSWORD }}
@@ -46,8 +43,22 @@ jobs:
             --output-filename prueba_dakhla_global \
             --file-format netcdf
 
-      - name: Guardar archivo de prueba
+      - name: Convertir datos a JSON
+        run: python scripts/procesar_oleaje.py
+
+      - name: Enviar datos a Cloudflare
+        env:
+          MAR_PESCA_INGEST_TOKEN: ${{ secrets.MAR_PESCA_INGEST_TOKEN }}
+        run: |
+          curl --fail-with-body \
+            -X POST \
+            -H "Authorization: Bearer ${MAR_PESCA_INGEST_TOKEN}" \
+            -H "Content-Type: application/json" \
+            --data-binary @oleaje_dakhla.json \
+            https://mar-pesca-api.bestgold8899.workers.dev/api/oleaje/ingest
+
+      - name: Guardar resultados
         uses: actions/upload-artifact@v4
         with:
-          name: datos-oleaje-dakhla
-          path: prueba_dakhla_global.nc
+          name: oleaje-dakhla-json
+          path: oleaje_dakhla.json
