@@ -3,6 +3,8 @@ name: Prueba Copernicus Marine
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "30 3 * * *"
 
 permissions:
   contents: read
@@ -23,6 +25,14 @@ jobs:
       - name: Instalar herramientas
         run: pip install copernicusmarine xarray netCDF4
 
+      - name: Calcular fechas de descarga
+        id: fechas
+        run: |
+          START=$(date -u '+%Y-%m-%dT00:00:00')
+          END=$(date -u -d '+2 days' '+%Y-%m-%dT00:00:00')
+          echo "start=$START" >> "$GITHUB_OUTPUT"
+          echo "end=$END" >> "$GITHUB_OUTPUT"
+
       - name: Descargar datos de oleaje
         env:
           COPERNICUSMARINE_SERVICE_USERNAME: ${{ secrets.COPERNICUS_USERNAME }}
@@ -37,8 +47,8 @@ jobs:
             --maximum-longitude -15.70 \
             --minimum-latitude 23.50 \
             --maximum-latitude 23.90 \
-            --start-datetime "2026-11-05 12:00:00" \
-            --end-datetime "2026-11-05 18:00:00" \
+            --start-datetime "${{ steps.fechas.outputs.start }}" \
+            --end-datetime "${{ steps.fechas.outputs.end }}" \
             --output-directory . \
             --output-filename prueba_dakhla_global \
             --file-format netcdf
