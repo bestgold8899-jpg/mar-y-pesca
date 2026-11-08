@@ -12,6 +12,7 @@ permissions:
 jobs:
   oleaje:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
 
     steps:
       - name: Descargar repositorio
@@ -23,7 +24,7 @@ jobs:
           python-version: "3.12"
 
       - name: Instalar herramientas
-        run: pip install copernicusmarine xarray netCDF4
+        run: pip install copernicusmarine xarray netCDF4 pandas
 
       - name: Calcular fechas de descarga
         id: fechas
@@ -33,42 +34,78 @@ jobs:
           echo "start=$START" >> "$GITHUB_OUTPUT"
           echo "end=$END" >> "$GITHUB_OUTPUT"
 
-      - name: Descargar datos de oleaje
+      - name: Descargar, procesar y enviar oleaje
         env:
           COPERNICUSMARINE_SERVICE_USERNAME: ${{ secrets.COPERNICUS_USERNAME }}
           COPERNICUSMARINE_SERVICE_PASSWORD: ${{ secrets.COPERNICUS_PASSWORD }}
-        run: |
-          copernicusmarine subset \
-            --dataset-id cmems_mod_glo_wav_anfc_0.083deg_PT3H-i \
-            --variable VHM0 \
-            --variable VMDR \
-            --variable VTPK \
-            --minimum-longitude -16.10 \
-            --maximum-longitude -15.70 \
-            --minimum-latitude 23.50 \
-            --maximum-latitude 23.90 \
-            --start-datetime "${{ steps.fechas.outputs.start }}" \
-            --end-datetime "${{ steps.fechas.outputs.end }}" \
-            --output-directory . \
-            --output-filename prueba_dakhla_global \
-            --file-format netcdf
-
-      - name: Convertir datos a JSON
-        run: python scripts/procesar_oleaje.py
-
-      - name: Enviar datos a Cloudflare
-        env:
           MAR_PESCA_INGEST_TOKEN: ${{ secrets.MAR_PESCA_INGEST_TOKEN }}
+          START_DATE: ${{ steps.fechas.outputs.start }}
+          END_DATE: ${{ steps.fechas.outputs.end }}
+        shell: bash
         run: |
-          curl --fail-with-body \
-            -X POST \
-            -H "Authorization: Bearer ${MAR_PESCA_INGEST_TOKEN}" \
-            -H "Content-Type: application/json" \
-            --data-binary @oleaje_dakhla.json \
-            https://mar-pesca-api.bestgold8899.workers.dev/api/oleaje/ingest
+          set -euo pipefail
 
-      - name: Guardar resultados
+          while IFS='|' read -r LOCATION LAT LON; do
+            [ -z "$LOCATION" ] && continue
+
+            echo "=========================================="
+            echo "Procesando oleaje: $LOCATION"
+            echo "=========================================="
+
+            MIN_LON=$(awk -v x="$LON" 'BEGIN {printf "%.5f", x - 0.25}')
+            MAX_LON=$(awk -v x="$LON" 'BEGIN {printf "%.5f", x + 0.25}')
+            MIN_LAT=$(awk -v x="$LAT" 'BEGIN {printf "%.5f", x - 0.25}')
+            MAX_LAT=$(awk -v x="$LAT" 'BEGIN {printf "%.5f", x + 0.25}')
+
+            copernicusmarine subset \
+              --dataset-id cmems_mod_glo_wav_anfc_0.083deg_PT3H-i \
+              --variable VHM0 \
+              --variable VMDR \
+              --variable VTPK \
+              --minimum-longitude "$MIN_LON" \
+              --maximum-longitude "$MAX_LON" \
+              --minimum-latitude "$MIN_LAT" \
+              --maximum-latitude "$MAX_LAT" \
+              --start-datetime "$START_DATE" \
+              --end-datetime "$END_DATE" \
+              --output-directory . \
+              --output-filename "oleaje_${LOCATION}" \
+              --file-format netcdf
+
+            python scripts/procesar_oleaje.py \
+              --input "oleaje_${LOCATION}.nc" \
+              --output "oleaje_${LOCATION}.json" \
+              --location "$LOCATION" \
+              --lat "$LAT" \
+              --lon "$LON"
+
+            curl --fail-with-body \
+              --retry 3 \
+              --retry-delay 3 \
+              -X POST \
+              -H "Authorization: Bearer ${MAR_PESCA_INGEST_TOKEN}" \
+              -H "Content-Type: application/json" \
+              --data-binary "@oleaje_${LOCATION}.json" \
+              https://mar-pesca-api.bestgold8899.workers.dev/api/oleaje/ingest
+
+            echo "Oleaje enviado correctamente: $LOCATION"
+
+          done <<'LOCATIONS'
+          mdiq|35.684|-5.326
+          martil|35.617|-5.275
+          fnideq|35.849|-5.357
+          tanger|35.779|-5.813
+          al-hoceima|35.249|-3.937
+          nador|35.168|-2.928
+          casablanca|33.599|-7.620
+          agadir|30.427|-9.598
+          dakhla|23.684|-15.958
+          LOCATIONS
+
+      - name: Guardar resultados JSON
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: oleaje-dakhla-json
-          path: oleaje_dakhla.json
+          name: oleaje-nueve-localidades
+          path: oleaje_*.json
+          if-no-files-found: warn
