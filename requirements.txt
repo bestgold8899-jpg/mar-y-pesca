@@ -1,3 +1,5 @@
 copernicusmarine
 xarray
 netCDF4
+h5py
+numpy
