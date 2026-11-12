@@ -1,0 +1,3 @@
+copernicusmarine
+xarray
+netCDF4
