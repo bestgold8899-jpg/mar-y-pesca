@@ -1,0 +1,90 @@
+name: Actualizar temperatura del mar (OSTIA)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '15 7 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: actualizar-temperatura-mar
+  cancel-in-progress: false
+
+jobs:
+  actualizar-sst:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      COPERNICUSMARINE_SERVICE_USERNAME: ${{ secrets.COPERNICUS_USERNAME }}
+      COPERNICUSMARINE_SERVICE_PASSWORD: ${{ secrets.COPERNICUS_PASSWORD }}
+      MAR_PESCA_INGEST_TOKEN: ${{ secrets.MAR_PESCA_INGEST_TOKEN }}
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Comprobar secretos
+        shell: bash
+        run: |
+          test -n "$COPERNICUSMARINE_SERVICE_USERNAME" || { echo 'Falta el secreto COPERNICUS_USERNAME'; exit 1; }
+          test -n "$COPERNICUSMARINE_SERVICE_PASSWORD" || { echo 'Falta el secreto COPERNICUS_PASSWORD'; exit 1; }
+          test -n "$MAR_PESCA_INGEST_TOKEN" || { echo 'Falta el secreto MAR_PESCA_INGEST_TOKEN'; exit 1; }
+
+      - name: Preparar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install copernicusmarine==2.5.1 h5py numpy
+
+      - name: Descargar SST OSTIA de los últimos 7 días
+        shell: bash
+        run: |
+          START_DATE="$(date -u -d '7 days ago' +%Y-%m-%d)"
+          END_DATE="$(date -u +%Y-%m-%d)"
+          mkdir -p data
+          copernicusmarine subset \
+            --dataset-id METOFFICE-GLO-SST-L4-NRT-OBS-SST-V2 \
+            --variable analysed_sst \
+            --minimum-longitude -16.2 \
+            --maximum-longitude -2.5 \
+            --minimum-latitude 23.0 \
+            --maximum-latitude 36.5 \
+            --start-datetime "$START_DATE" \
+            --end-datetime "$END_DATE" \
+            --output-directory data \
+            --output-filename sst_latest.nc \
+            --file-format netcdf \
+            --overwrite
+          test -s data/sst_latest.nc
+
+      - name: Procesar el último día disponible
+        run: python scripts/procesar_sst.py data/sst_latest.nc sst_mar.json
+
+      - name: Enviar datos al Worker
+        shell: bash
+        run: |
+          RESPONSE="$(curl --fail-with-body --silent --show-error \
+            --request POST \
+            --url 'https://mar-pesca-api.bestgold8899.workers.dev/api/temperatura-mar/ingest' \
+            --header "Authorization: Bearer ${MAR_PESCA_INGEST_TOKEN}" \
+            --header 'Content-Type: application/json' \
+            --data-binary @sst_mar.json)"
+          echo "$RESPONSE"
+          echo "$RESPONSE" | jq -e '.ok == true' >/dev/null
+
+      - name: Resumen de la observación enviada
+        run: |
+          python - <<'PY'
+          import json
+          with open('sst_mar.json', encoding='utf-8') as f:
+              d = json.load(f)
+          print('Fecha SST:', d['date'])
+          for key, value in d['locations'].items():
+              print(f"{key}: {value.get('temperature_c')} °C")
+          PY
