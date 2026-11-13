@@ -28,14 +28,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install copernicusmarine xarray netCDF4 pandas
 
-      - name: Calcular fechas de descarga (10 días)
+      - name: Calcular fechas de descarga (9 días disponibles)
         id: fechas
         shell: bash
         run: |
           set -euo pipefail
 
           START=$(date -u '+%Y-%m-%dT00:00:00')
-          END=$(date -u -d '+10 days' '+%Y-%m-%dT00:00:00')
+          END=$(date -u -d '+9 days' '+%Y-%m-%dT00:00:00')
 
           echo "start=$START" >> "$GITHUB_OUTPUT"
           echo "end=$END" >> "$GITHUB_OUTPUT"
@@ -217,7 +217,7 @@ jobs:
           print(f"Primer registro: {first.isoformat()}")
           print(f"Último registro: {last.isoformat()}")
 
-          # La descarga debe cubrir aproximadamente los 10 días solicitados.
+          # La descarga debe cubrir aproximadamente los 9 días solicitados.
           if first < start - timedelta(hours=3):
               fail("Hay registros anteriores al período solicitado")
 
