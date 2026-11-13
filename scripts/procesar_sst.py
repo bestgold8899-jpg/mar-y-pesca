@@ -32,7 +32,6 @@ LOCATIONS = {
     "tan-tan-plage": {"name": "Tan-Tan Plage (El Ouatia)", "lat": 28.493, "lng": -11.337},
     "tarfaya": {"name": "Tarfaya", "lat": 27.937, "lng": -12.927},
     "laayoune-plage": {"name": "Laayoune Plage (Foum El Oued)", "lat": 27.100, "lng": -13.430},
-    "saidia": {"name": "Saïdia", "lat": 35.081, "lng": -2.230},
 }
 
 MAX_DISTANCE_KM = 25.0
@@ -287,25 +286,6 @@ def main():
                     "pixel": None,
                     "distance_km": None,
                 }
-
-            # Diagnóstico específico: mostrar el píxel oceánico más cercano
-            # de Saïdia aunque supere el límite, sin publicarlo como dato válido.
-            if slug == "saidia":
-                if result:
-                    print(
-                        "DIAGNÓSTICO SAÏDIA: "
-                        f"píxel más cercano a {result['distance_km']} km; "
-                        f"coordenadas {result['pixel']['lat']}, "
-                        f"{result['pixel']['lng']}; "
-                        f"temperatura {result['temperature_c']} °C; "
-                        f"límite permitido {MAX_DISTANCE_KM} km."
-                    )
-                else:
-                    print(
-                        "DIAGNÓSTICO SAÏDIA: no se encontró ningún píxel "
-                        "oceánico válido dentro del área de búsqueda "
-                        "de 0,5° alrededor de la localidad."
-                    )
 
         payload = {
             "ok": True,
