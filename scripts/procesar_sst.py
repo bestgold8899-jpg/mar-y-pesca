@@ -157,7 +157,7 @@ def nearest_ocean_pixel(lat_grid, lon_grid, sst, target_lat, target_lng):
     idx = np.unravel_index(np.argmin(distance), distance.shape)
     km = float(distance[idx])
 
-    if not math.isfinite(km) or km > MAX_DISTANCE_KM:
+    if not math.isfinite(km):
         return None
 
     kelvin = float(values[idx])
@@ -274,7 +274,7 @@ def main():
                 place["lng"],
             )
 
-            if result:
+            if result and result["distance_km"] <= MAX_DISTANCE_KM:
                 locations[slug] = {
                     "name": place["name"],
                     **result,
@@ -287,6 +287,25 @@ def main():
                     "pixel": None,
                     "distance_km": None,
                 }
+
+            # Diagnóstico específico: mostrar el píxel oceánico más cercano
+            # de Saïdia aunque supere el límite, sin publicarlo como dato válido.
+            if slug == "saidia":
+                if result:
+                    print(
+                        "DIAGNÓSTICO SAÏDIA: "
+                        f"píxel más cercano a {result['distance_km']} km; "
+                        f"coordenadas {result['pixel']['lat']}, "
+                        f"{result['pixel']['lng']}; "
+                        f"temperatura {result['temperature_c']} °C; "
+                        f"límite permitido {MAX_DISTANCE_KM} km."
+                    )
+                else:
+                    print(
+                        "DIAGNÓSTICO SAÏDIA: no se encontró ningún píxel "
+                        "oceánico válido dentro del área de búsqueda "
+                        "de 0,5° alrededor de la localidad."
+                    )
 
         payload = {
             "ok": True,
