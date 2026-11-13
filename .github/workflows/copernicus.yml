@@ -288,13 +288,12 @@ jobs:
           tan-tan-plage|28.493|-11.337
           tarfaya|27.937|-12.927
           laayoune-plage|27.1|-13.43
-          saidia|35.081|-2.23
           LOCATIONS
 
       - name: Guardar resultados JSON
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: oleaje-veinte-localidades
+          name: oleaje-diecinueve-localidades
           path: oleaje_*.json
           if-no-files-found: warn
