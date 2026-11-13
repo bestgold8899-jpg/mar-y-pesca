@@ -278,12 +278,23 @@ jobs:
           casablanca|33.599|-7.620
           agadir|30.427|-9.598
           dakhla|23.684|-15.958
+          asilah|35.465|-6.034
+          larache|35.193|-6.156
+          mehdia|34.256|-6.672
+          el-jadida|33.256|-8.508
+          safi|32.299|-9.237
+          essaouira|31.513|-9.77
+          sidi-ifni|29.379|-10.173
+          tan-tan-plage|28.493|-11.337
+          tarfaya|27.937|-12.927
+          laayoune-plage|27.1|-13.43
+          saidia|35.081|-2.23
           LOCATIONS
 
       - name: Guardar resultados JSON
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: oleaje-nueve-localidades
+          name: oleaje-veinte-localidades
           path: oleaje_*.json
           if-no-files-found: warn
