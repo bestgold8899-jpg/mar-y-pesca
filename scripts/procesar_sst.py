@@ -22,6 +22,17 @@ LOCATIONS = {
     "casablanca": {"name": "Casablanca", "lat": 33.599, "lng": -7.620},
     "agadir": {"name": "Agadir", "lat": 30.427, "lng": -9.598},
     "dakhla": {"name": "Dakhla", "lat": 23.684, "lng": -15.958},
+    "asilah": {"name": "Asilah", "lat": 35.465, "lng": -6.034}},
+    "larache": {"name": "Larache", "lat": 35.193, "lng": -6.156}},
+    "mehdia": {"name": "Mehdia", "lat": 34.256, "lng": -6.672}},
+    "el-jadida": {"name": "El Jadida", "lat": 33.256, "lng": -8.508}},
+    "safi": {"name": "Safi", "lat": 32.299, "lng": -9.237}},
+    "essaouira": {"name": "Essaouira", "lat": 31.513, "lng": -9.77}},
+    "sidi-ifni": {"name": "Sidi Ifni", "lat": 29.379, "lng": -10.173}},
+    "tan-tan-plage": {"name": "Tan-Tan Plage (El Ouatia)", "lat": 28.493, "lng": -11.337}},
+    "tarfaya": {"name": "Tarfaya", "lat": 27.937, "lng": -12.927}},
+    "laayoune-plage": {"name": "Laayoune Plage (Foum El Oued)", "lat": 27.1, "lng": -13.43}},
+    "saidia": {"name": "Saïdia", "lat": 35.081, "lng": -2.23}},
 }
 
 MAX_DISTANCE_KM = 25.0
