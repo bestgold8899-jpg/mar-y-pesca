@@ -138,7 +138,7 @@ def main():
             ),
             "direccion_olas_grados": round(
                 float(row["VMDR"]) % 360, 1
-            ),
+            ) % 360,
             "periodo_olas_s": round(
                 float(row["VTPK"]), 2
             )
