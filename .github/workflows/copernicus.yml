@@ -1,10 +1,9 @@
-
 name: Prueba Copernicus Marine
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "30 3 * * *"
+    - cron: "0 */6 * * *"
 
 permissions:
   contents: read
@@ -130,7 +129,6 @@ jobs:
           from pathlib import Path
 
           filename, start_text, end_text = sys.argv[1:4]
-
           path = Path(filename)
 
           def fail(message):
@@ -138,9 +136,7 @@ jobs:
 
           def parse_date(value):
               try:
-                  result = datetime.fromisoformat(
-                      value.replace("Z", "+00:00")
-                  )
+                  result = datetime.fromisoformat(value.replace("Z", "+00:00"))
                   if result.tzinfo is None:
                       result = result.replace(tzinfo=timezone.utc)
                   return result.astimezone(timezone.utc)
@@ -153,97 +149,69 @@ jobs:
               fail(f"JSON ilegible: {exc}")
 
           records = data.get("datos")
-
           if not isinstance(records, list):
               fail("No existe una lista de datos válida")
 
           count = len(records)
-
           print(f"Registros encontrados: {count}")
-
           if count < 60:
               fail(f"Solo hay {count} registros; mínimo permitido: 60")
 
           start = parse_date(start_text)
           end = parse_date(end_text)
-
           timestamps = []
 
           for index, record in enumerate(records):
               if not isinstance(record, dict):
                   fail(f"Registro {index} inválido")
 
-              timestamp = parse_date(
-                  record.get("fecha_utc", "")
-              )
-
+              timestamp = parse_date(record.get("fecha_utc", ""))
               timestamps.append(timestamp)
 
               height = record.get("altura_olas_m")
               direction = record.get("direccion_olas_grados")
               period = record.get("periodo_olas_s")
 
-              for name, value in (
-                  ("altura", height),
-                  ("dirección", direction),
-                  ("período", period),
-              ):
-                  if isinstance(value, bool) or not isinstance(
-                      value, (int, float)
-                  ):
+              for name, value in (("altura", height), ("dirección", direction), ("período", period)):
+                  if isinstance(value, bool) or not isinstance(value, (int, float)):
                       fail(f"{name} inválida en registro {index}")
-
                   if not math.isfinite(value):
                       fail(f"{name} no finita en registro {index}")
 
               if height < 0:
                   fail(f"Altura negativa en registro {index}")
-
               if not 0 <= direction < 360:
                   fail(f"Dirección fuera de rango en registro {index}")
-
               if period <= 0:
                   fail(f"Período no válido en registro {index}")
 
           if timestamps != sorted(timestamps):
               fail("Los registros no están ordenados cronológicamente")
-
           if len(set(timestamps)) != len(timestamps):
               fail("Hay fechas duplicadas")
 
           first = timestamps[0]
           last = timestamps[-1]
-
           print(f"Primer registro: {first.isoformat()}")
           print(f"Último registro: {last.isoformat()}")
 
-          # La descarga debe cubrir aproximadamente los 9 días solicitados.
           if first < start - timedelta(hours=3):
               fail("Hay registros anteriores al período solicitado")
-
           if first > start + timedelta(hours=6):
               fail("La previsión comienza demasiado tarde")
-
           if last < end - timedelta(hours=6):
               fail("La previsión termina demasiado pronto")
-
           if last > end + timedelta(hours=3):
               fail("Hay registros posteriores al período solicitado")
 
-          # Copernicus entrega estos datos cada 3 horas.
-          for previous, current in zip(
-              timestamps, timestamps[1:]
-          ):
+          for previous, current in zip(timestamps, timestamps[1:]):
               difference = current - previous
-
               if difference <= timedelta(0):
                   fail("Intervalo cronológico inválido")
-
               if difference > timedelta(hours=6):
                   fail(
                       f"Hueco de más de 6 horas: "
-                      f"{previous.isoformat()} -> "
-                      f"{current.isoformat()}"
+                      f"{previous.isoformat()} -> {current.isoformat()}"
                   )
 
           print("VALIDACIÓN CORRECTA")
