@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://mar-y-pesca.bestgold8899.workers.dev/sitemap.xml
