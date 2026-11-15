@@ -110,6 +110,7 @@ footer{text-align:center;border-top:1px solid var(--border);padding:16px 8px;col
 
 .tide-day-panel{margin:14px 0 16px;padding:15px;background:linear-gradient(160deg,#142d4b,#101d35);border:1px solid #285276;border-radius:15px;overflow:hidden}.tide-day-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.tide-day-title{font-size:16px;font-weight:850;color:#eaf7ff}.tide-day-sub{font-size:11px;color:#a9c1d9;margin:5px 0 8px}.tide-day-date{font-size:12px;color:#7dd3fc;font-weight:750}.tide-day-svg{display:block;width:100%;height:auto;min-height:190px;overflow:visible}.tide-day-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:#c7d9e9;margin-top:7px}.tide-legend-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.tide-day-foot{font-size:10px;color:#91a9c0;margin-top:8px;line-height:1.45}@media(max-width:480px){.tide-day-panel{padding:11px}.tide-day-svg{min-height:165px}.tide-day-legend{gap:10px}}
 .fishing-tools{margin:18px 12px;display:grid;gap:14px}.tool-card{background:linear-gradient(150deg,#102944,#101b30);border:1px solid #285276;border-radius:17px;padding:16px;color:#e8f4ff;box-shadow:0 10px 26px #0002}.tool-kicker{font-size:10px;letter-spacing:1.3px;color:#7dd3fc;font-weight:800}.tool-title{font-size:19px;font-weight:850;margin:5px 0}.tool-sub{font-size:12px;color:#aec4d8;line-height:1.5;margin:4px 0 12px}.best-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.best-slot{background:#ffffff0c;border:1px solid #ffffff18;border-radius:12px;padding:11px 8px;text-align:center}.best-slot b{display:block;font-size:17px;color:#7dd3fc}.best-slot strong{font-size:11px;display:block;margin-top:4px}.best-slot small{font-size:10px;color:#a9bfd3;display:block;margin-top:4px}.tool-note{font-size:10px;color:#91a9c0;line-height:1.45;margin-top:11px}.tool-action{border:0;border-radius:11px;background:#087db8;color:white;padding:11px 15px;font-weight:800;font-size:12px}.map-wrap{background:linear-gradient(145deg,#0b2033,#15374c);border-radius:13px;padding:6px;overflow:hidden}#fishingMap{width:100%;height:470px;display:block;max-width:760px;margin:0 auto;border-radius:10px;overflow:hidden;background:#dbeafe}.leaflet-container{font:12px system-ui,sans-serif}.leaflet-control-attribution{font-size:9px!important}.leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#10243a;color:#eef7ff}.leaflet-popup-content{margin:9px 12px;font-weight:700}.leaflet-control-zoom a{color:#10243a!important}.map-point{cursor:pointer;stroke:#f0f9ff;stroke-width:2.5}.map-point:focus{outline:none;stroke:#fff;stroke-width:4}.map-number{font-size:9px;fill:#082033;font-weight:900;text-anchor:middle;dominant-baseline:central;pointer-events:none}.map-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:#c5d8e9;margin-top:9px}.map-legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.map-status{font-size:11px;color:#b7ccdf;margin-top:9px;min-height:16px}.map-locality-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;margin-top:10px}.map-locality{display:flex;align-items:center;gap:7px;text-align:left;border:1px solid #ffffff18;background:#ffffff09;border-radius:9px;padding:8px;color:#e4f2fc;font-size:11px;min-width:0}.map-locality i{width:9px;height:9px;border-radius:50%;flex:0 0 9px}.map-locality span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.map-locality:active{background:#ffffff20}@media(max-width:430px){.best-slots{gap:5px}.best-slot{padding:9px 4px}.best-slot b{font-size:15px}.tool-card{padding:13px}}
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
@@ -632,7 +633,15 @@ async function loadFishingMap(){
  renderFishingMap(results);const count=Object.values(results).filter(v=>v&&v.wind!==null&&v.wave!==null).length;$("mapStatus").textContent=count+" / "+entries.length+" localidades con datos de viento y oleaje. Pulsa un punto para abrir su previsión completa.";$("mapRefresh").disabled=false;mapLoading=false;
 }
 
-function renderAll(){renderDays();renderWeather();renderTides();renderActivity();renderVisualSnapshot();renderBestFishingTime()}
+function isMoroccoToday(date){
+ const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Casablanca",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+ return Boolean(date)&&date===today;
+}
+function renderFishingMapVisibility(){
+ // El mapa inteligente es un resumen de las condiciones de HOY, no una previsión para cada día seleccionado.
+ $("fishingMapCard").hidden=!isMoroccoToday(selectedDate);
+}
+function renderAll(){renderDays();renderWeather();renderTides();renderActivity();renderVisualSnapshot();renderBestFishingTime();renderFishingMapVisibility()}
 
 function renderVisualSnapshot(){
  const copy=lang==="fr"?{title:"La mer, en un coup d'œil",caption:"Votre aperçu maritime pour le jour sélectionné",wind:"Vent maximal",wave:"Hauteur des vagues",moon:"Phase lunaire",illum:"Éclairage",foot:"Données réelles des sources connectées. Les valeurs absentes restent indisponibles.",day:"PRÉVISION 7 JOURS"}:lang==="ar"?{title:"البحر بنظرة واحدة",caption:"ملخص حالة البحر لليوم المحدد",wind:"أقصى سرعة للرياح",wave:"ارتفاع الأمواج",moon:"طور القمر",illum:"الإضاءة",foot:"بيانات فعلية من المصادر المتصلة، ولا نعرض قيماً غير متوفرة.",day:"توقعات ٧ أيام"}:{title:"El mar, en directo",caption:"Tu resumen marítimo para el día seleccionado",wind:"Viento máximo",wave:"Altura del oleaje",moon:"Fase lunar",illum:"Iluminación",foot:"Datos reales de las fuentes conectadas. Los valores que faltan no se inventan.",day:"PRONÓSTICO 7 DÍAS"};
@@ -711,7 +720,7 @@ function applyLanguage(){
  Object.entries(map).forEach(([id,key])=>$(id).textContent=t[key]);
  renderAll();
 }
-$("mapRefresh").addEventListener("click",loadFishingMap);renderFishingMap(null);
+$("mapRefresh").addEventListener("click",loadFishingMap);
 $("language").addEventListener("change",e=>{lang=e.target.value;applyLanguage()});
 $("location").addEventListener("change",()=>{selectedDate="";load()});
 lang=$("language").value;applyLanguage();load();
