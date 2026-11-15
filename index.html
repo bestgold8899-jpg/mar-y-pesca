@@ -108,6 +108,7 @@ footer{text-align:center;border-top:1px solid var(--border);padding:16px 8px;col
 @media(prefers-reduced-motion:reduce){.hero-wave,.hero-live i{animation:none}}
 
 .tide-day-panel{margin:14px 0 16px;padding:15px;background:linear-gradient(160deg,#142d4b,#101d35);border:1px solid #285276;border-radius:15px;overflow:hidden}.tide-day-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.tide-day-title{font-size:16px;font-weight:850;color:#eaf7ff}.tide-day-sub{font-size:11px;color:#a9c1d9;margin:5px 0 8px}.tide-day-date{font-size:12px;color:#7dd3fc;font-weight:750}.tide-day-svg{display:block;width:100%;height:auto;min-height:190px;overflow:visible}.tide-day-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:#c7d9e9;margin-top:7px}.tide-legend-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.tide-day-foot{font-size:10px;color:#91a9c0;margin-top:8px;line-height:1.45}@media(max-width:480px){.tide-day-panel{padding:11px}.tide-day-svg{min-height:165px}.tide-day-legend{gap:10px}}
+.fishing-tools{margin:18px 12px;display:grid;gap:14px}.tool-card{background:linear-gradient(150deg,#102944,#101b30);border:1px solid #285276;border-radius:17px;padding:16px;color:#e8f4ff;box-shadow:0 10px 26px #0002}.tool-kicker{font-size:10px;letter-spacing:1.3px;color:#7dd3fc;font-weight:800}.tool-title{font-size:19px;font-weight:850;margin:5px 0}.tool-sub{font-size:12px;color:#aec4d8;line-height:1.5;margin:4px 0 12px}.best-slots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.best-slot{background:#ffffff0c;border:1px solid #ffffff18;border-radius:12px;padding:11px 8px;text-align:center}.best-slot b{display:block;font-size:17px;color:#7dd3fc}.best-slot strong{font-size:11px;display:block;margin-top:4px}.best-slot small{font-size:10px;color:#a9bfd3;display:block;margin-top:4px}.tool-note{font-size:10px;color:#91a9c0;line-height:1.45;margin-top:11px}.tool-action{border:0;border-radius:11px;background:#087db8;color:white;padding:11px 15px;font-weight:800;font-size:12px}.map-wrap{background:radial-gradient(ellipse at 48% 45%,#1d4960,#10243a 70%);border-radius:13px;padding:8px;overflow:hidden}#fishingMap{width:100%;height:auto;display:block}.map-point{cursor:pointer;stroke:#e0f2fe;stroke-width:2}.map-label{font-size:10px;fill:#e8f4ff;paint-order:stroke;stroke:#10243a;stroke-width:3px;stroke-linejoin:round}.map-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:10px;color:#c5d8e9;margin-top:9px}.map-legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.map-status{font-size:11px;color:#b7ccdf;margin-top:9px;min-height:16px}@media(max-width:430px){.best-slots{gap:5px}.best-slot{padding:9px 4px}.best-slot b{font-size:15px}.tool-card{padding:13px}}
 </style>
 </head>
 <body>
@@ -133,7 +134,10 @@ footer{text-align:center;border-top:1px solid var(--border);padding:16px 8px;col
   <div class="visual-foot" id="visualFoot">Datos reales disponibles para la localidad seleccionada.</div>
  </div>
 </section>
-
+<section class="fishing-tools" aria-label="Herramientas inteligentes de pesca">
+ <article class="tool-card" id="bestFishingCard"><div class="tool-kicker">MAR &amp; PESCA · PLANIFICA TU SALIDA</div><div class="tool-title" id="bestTitle">¿Cuándo es mejor pescar?</div><p class="tool-sub" id="bestSub">Franjas orientativas según las condiciones disponibles.</p><div class="best-slots" id="bestSlots"><div class="best-slot"><b>—</b><strong>Esperando datos</strong></div></div><div class="tool-note" id="bestNote">Estimación orientativa desde costa. No garantiza capturas ni sustituye las indicaciones de seguridad.</div></article>
+ <article class="tool-card" id="fishingMapCard"><div class="tool-kicker">MARRUECOS · COSTA ATLÁNTICA Y MEDITERRÁNEA</div><div class="tool-title" id="mapTitle">Mapa inteligente de condiciones</div><p class="tool-sub" id="mapSub">Compara el viento previsto y abre una localidad para consultar su previsión completa.</p><div class="map-wrap"><svg id="fishingMap" viewBox="0 0 520 520" role="img" aria-label="Mapa esquemático de localidades costeras de Marruecos"><path d="M155 38 L202 48 L230 82 L244 125 L261 160 L280 202 L300 247 L320 292 L340 337 L355 385 L370 438 L347 472 L314 458 L287 425 L260 393 L235 357 L215 321 L195 286 L177 249 L158 214 L141 176 L126 140 L119 105 L128 69 Z" fill="#28546a" stroke="#7dd3fc" stroke-width="3"/><text x="25" y="80" fill="#a9c1d9" font-size="12">ATLÁNTICO</text><text x="320" y="32" fill="#a9c1d9" font-size="12">MEDITERRÁNEO</text><g id="fishingMapPoints"></g></svg></div><div class="map-legend"><span><i style="background:#34d399"></i>Viento suave</span><span><i style="background:#fbbf24"></i>Moderado</span><span><i style="background:#fb7185"></i>Fuerte</span><span><i style="background:#94a3b8"></i>Sin datos</span></div><div class="map-status" id="mapStatus">Pulsa «Actualizar mapa» para comparar localidades.</div><button class="tool-action" id="mapRefresh" type="button">Actualizar mapa de condiciones</button></article>
+</section>
 <section class="seo-content" aria-labelledby="seoTitle">
  <h2 id="seoTitle">Previsión de pesca en Marruecos: consulta el estado del mar antes de salir</h2>
  <p id="seoIntro">Mar &amp; Pesca reúne información meteorológica y marítima para ayudarte a preparar tus jornadas de pesca en la costa de Marruecos. Selecciona una localidad y consulta el viento, las rachas, el oleaje, las mareas, la lluvia y las fases lunares.</p>
@@ -584,7 +588,29 @@ function renderActivity(){
  const details=factors.map(f=>`${f.name}: ${Math.round(f.score)}/100`).join(" · ");
  $("activityExplain").textContent=(lang==="fr"?"Estimation indicative des conditions générales depuis la côte — pas une garantie de capture. ":lang==="ar"?"تقدير إرشادي للظروف العامة للصيد من الساحل، وليس ضماناً للصيد. ":"Estimación orientativa de las condiciones generales desde costa; no garantiza capturas. ")+details;
 }
-function renderAll(){renderDays();renderWeather();renderTides();renderActivity();renderVisualSnapshot()}
+
+function renderBestFishingTime(){
+ const host=$("bestSlots"),hours=(forecast?.hours||[]).filter(h=>dateOnly(h.time)===selectedDate),c=lang==="fr"?{title:"Meilleur moment pour pêcher",sub:"Créneaux estimés selon le vent, les rafales et les vagues.",none:"Données insuffisantes",note:"Estimation indicative depuis la côte. Elle ne garantit pas de prises et ne remplace pas les consignes de sécurité."}:lang==="ar"?{title:"أفضل وقت للصيد",sub:"فترات مقترحة حسب الرياح والهبات والأمواج.",none:"بيانات غير كافية",note:"تقدير إرشادي للصيد من الساحل، ولا يضمن الصيد ولا يحل محل إرشادات السلامة."}:{title:"¿Cuándo es mejor pescar?",sub:"Franjas horarias estimadas según viento, rachas y oleaje.",none:"Datos insuficientes",note:"Estimación orientativa desde costa. No garantiza capturas ni sustituye las indicaciones de seguridad."};
+ $("bestTitle").textContent=c.title;$("bestSub").textContent=c.sub;$("bestNote").textContent=c.note;
+ const scored=hours.map(h=>{const w=num(h.wind),g=num(h.gust),wr=waveForHour(h.time),v=wr?.height??null,r=num(h.rain);if(w===null||v===null)return null;const score=(w<=8?90:w<=14?78:w<=20?58:w<=27?35:10)*.38+(g===null?65:g<=15?90:g<=25?70:g<=35?40:10)*.18+(v<=.3?55:v<=.8?92:v<=1.2?78:v<=1.7?52:v<=2.2?25:8)*.38+(r===null?65:r<=.1?90:r<=1?70:r<=3?40:10)*.06;return {time:h.time,score:Math.round(score),wind:w,wave:v};}).filter(Boolean).sort((a,b)=>b.score-a.score);
+ const chosen=[];for(const v of scored){const hr=Number(String(v.time).match(/T(\d{2})/)?.[1]??-99);if(chosen.every(x=>Math.abs(Number(String(x.time).match(/T(\d{2})/)?.[1]??99)-hr)>=2))chosen.push(v);if(chosen.length===3)break;}
+ if(!chosen.length){host.innerHTML='<div class="best-slot" style="grid-column:1/-1"><b>—</b><strong>'+c.none+'</strong><small>Se necesitan datos horarios coincidentes de viento y oleaje.</small></div>';return;}
+ host.innerHTML=chosen.map((v,i)=>{const t=String(v.time).match(/T(\d{2}:\d{2})/)?.[1]||"—";return '<div class="best-slot"><b>'+t+'</b><strong>'+(lang==="fr"?"Créneau ":lang==="ar"?"الفترة ":"Franja ")+(i+1)+'</strong><small>'+v.wind.toFixed(0)+' km/h · '+v.wave.toFixed(1)+' m</small><small>'+v.score+'/100 orientativo</small></div>';}).join("");
+}
+function renderFishingMap(points){
+ const group=$("fishingMapPoints"),entries=Object.entries(LOCATIONS),minLat=23.5,maxLat=36.1,minLng=-16.2,maxLng=-2.7;
+ group.innerHTML=entries.map(([id,l])=>{const x=112+(l.lng-minLng)/(maxLng-minLng)*260,y=45+(maxLat-l.lat)/(maxLat-minLat)*420,p=points?.[id],color=!p||p.wind===null?"#94a3b8":p.wind<=14?"#34d399":p.wind<=22?"#fbbf24":"#fb7185";return '<g data-location="'+id+'" tabindex="0" role="button" aria-label="'+l.name+'"><circle class="map-point" cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="8" fill="'+color+'"/><text class="map-label" x="'+(x+9).toFixed(1)+'" y="'+(y+3).toFixed(1)+'">'+l.name+'</text></g>';}).join("");
+ group.querySelectorAll("g[data-location]").forEach(g=>{const go=()=>{$("location").value=g.dataset.location;load();window.scrollTo({top:0,behavior:"smooth"});};g.addEventListener("click",go);g.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();go();}});});
+}
+let mapLoading=false;
+async function loadFishingMap(){
+ if(mapLoading)return;mapLoading=true;$("mapRefresh").disabled=true;$("mapStatus").textContent="Consultando previsiones…";
+ const entries=Object.entries(LOCATIONS),results={};let done=0;
+ for(let i=0;i<entries.length;i+=4){await Promise.all(entries.slice(i,i+4).map(async([id,l])=>{try{const raw=await getJson(API_BASE+"/api/forecast?location="+encodeURIComponent(id)+"&lat="+l.lat+"&lng="+l.lng+"&days=2"),n=normalizeForecast(raw),d=n.days[0];results[id]={wind:num(d?.wind),rain:num(d?.rain)};}catch(e){results[id]=null;}done++;$("mapStatus").textContent=done+" / "+entries.length+" localidades consultadas";}));}
+ renderFishingMap(results);const count=Object.values(results).filter(Boolean).length;$("mapStatus").textContent=count+" / "+entries.length+" localidades con datos de viento. Pulsa un punto para abrir su previsión completa.";$("mapRefresh").disabled=false;mapLoading=false;
+}
+
+function renderAll(){renderDays();renderWeather();renderTides();renderActivity();renderVisualSnapshot();renderBestFishingTime()}
 
 function renderVisualSnapshot(){
  const copy=lang==="fr"?{title:"La mer, en un coup d'œil",caption:"Votre aperçu maritime pour le jour sélectionné",wind:"Vent maximal",wave:"Hauteur des vagues",moon:"Phase lunaire",illum:"Éclairage",foot:"Données réelles des sources connectées. Les valeurs absentes restent indisponibles.",day:"PRÉVISION 7 JOURS"}:lang==="ar"?{title:"البحر بنظرة واحدة",caption:"ملخص حالة البحر لليوم المحدد",wind:"أقصى سرعة للرياح",wave:"ارتفاع الأمواج",moon:"طور القمر",illum:"الإضاءة",foot:"بيانات فعلية من المصادر المتصلة، ولا نعرض قيماً غير متوفرة.",day:"توقعات ٧ أيام"}:{title:"El mar, en directo",caption:"Tu resumen marítimo para el día seleccionado",wind:"Viento máximo",wave:"Altura del oleaje",moon:"Fase lunar",illum:"Iluminación",foot:"Datos reales de las fuentes conectadas. Los valores que faltan no se inventan.",day:"PRONÓSTICO 7 DÍAS"};
@@ -663,6 +689,7 @@ function applyLanguage(){
  Object.entries(map).forEach(([id,key])=>$(id).textContent=t[key]);
  renderAll();
 }
+$("mapRefresh").addEventListener("click",loadFishingMap);renderFishingMap(null);
 $("language").addEventListener("change",e=>{lang=e.target.value;applyLanguage()});
 $("location").addEventListener("change",()=>{selectedDate="";load()});
 lang=$("language").value;applyLanguage();load();
