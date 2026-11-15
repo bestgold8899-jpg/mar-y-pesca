@@ -182,7 +182,7 @@ footer{text-align:center;border-top:1px solid var(--border);padding:16px 8px;col
  <div class="tide-day-foot" id="tideDayFoot">La curva se interpola entre los extremos reales facilitados por la estación; no representa mediciones horarias.</div>
 </section>
 <div class="grid2">
- <div class="panel"><b id="tideCurveTitle">Estado actual de la marea</b><p class="sub" id="tideCurveSub">Indicación calculada con las pleamares y bajamares reales.</p><svg class="chart" id="tideChart" viewBox="0 0 360 360" role="img" aria-label="Estado circular de la marea"><text x="180" y="180" text-anchor="middle" fill="#a0aec0">Datos no disponibles</text></svg><p id="tideStateNote" class="month-circle-note">Datos no disponibles</p></div>
+ <div class="panel" id="tideCurrentPanel"><b id="tideCurveTitle">Estado actual de la marea</b><p class="sub" id="tideCurveSub">Indicación calculada con las pleamares y bajamares reales.</p><svg class="chart" id="tideChart" viewBox="0 0 360 360" role="img" aria-label="Estado circular de la marea"><text x="180" y="180" text-anchor="middle" fill="#a0aec0">Datos no disponibles</text></svg><p id="tideStateNote" class="month-circle-note">Datos no disponibles</p></div>
  <div class="panel"><b id="moonCalendarTitle">Calendario lunar</b><p class="sub" id="moonCalendarSub">Fase e iluminación por día, si TideCheck las proporciona.</p><div id="moonCalendar" class="empty">Datos no disponibles</div></div>
 </div>
 <div class="panel"><b id="activityTitle">Actividad de pesca estimada</b><div style="font-size:28px;font-weight:800;margin:8px 0" id="activityScore">— / 100</div><div id="activityLabel" class="muted">Sin datos suficientes</div><p class="sub" id="activityExplain">La puntuación solo se mostrará cuando haya datos reales suficientes. Es una estimación orientativa, no una garantía de captura.</p></div>
@@ -411,7 +411,7 @@ function moonPhaseLabel(value){
  return labels[lang][id];
 }
 function renderTides(){
- if(!tidePayload){["stationName","nextHigh","nextLow","moonValue","illumValue"].forEach(id=>$(id).textContent=tr("noData"));$("monthRows").innerHTML=`<tr><td colspan="4" class="empty">${tr("noData")}</td></tr>`;renderDailyTideChart([]);return}
+ if(!tidePayload){$("tideCurrentPanel").hidden=true;["stationName","nextHigh","nextLow","moonValue","illumValue"].forEach(id=>$(id).textContent=tr("noData"));$("monthRows").innerHTML=`<tr><td colspan="4" class="empty">${tr("noData")}</td></tr>`;renderDailyTideChart([]);return}
  const {station,extremes,series,conditions,daily,datum,timezone}=tidePayload;
  const requestedLocation=LOCATIONS[$("location").value]?.name||"";
  const physicalStation=station?.name||tr("noData");
@@ -448,7 +448,7 @@ function renderTides(){
  $("nextHigh").textContent=tideText(high);$("nextLow").textContent=tideText(low);
  $("moonValue").textContent=moonPhaseLabel(conditions?.moonPhase);
  $("illumValue").textContent=conditions?.moonIllumination==null?tr("noData"):`${fmt(conditions.moonIllumination)}%`;
- renderTideChart(extremes);renderDailyTideChart(extremes);renderMonthRows(extremes,daily);renderMoon(daily);
+ const today=new Date();const todayKey=today.getFullYear()+"-"+String(today.getMonth()+1).padStart(2,"0")+"-"+String(today.getDate()).padStart(2,"0");const showCurrentTide=selectedDate===todayKey;$("tideCurrentPanel").hidden=!showCurrentTide;if(showCurrentTide)renderTideChart(extremes);else $("tideStateNote").textContent="";renderDailyTideChart(extremes);renderMonthRows(extremes,daily);renderMoon(daily);
 }
 function tideEventMs(e){
  const value=e?.time;
