@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="google-site-verification" content="JYpZBovg6QgtJ_vXO04jb7FA9iO-pfykDy6jlkqBZ34" />
 <meta name="theme-color" content="#0b132b">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="shortcut icon" href="/favicon.svg">
+<meta name="application-name" content="Mar &amp; Pesca">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
 <meta name="description" content="Consulta la previsión de pesca en Marruecos: mareas, viento, oleaje, tiempo y fases lunares en las principales localidades costeras. El mar, antes de salir.">
 <link rel="canonical" href="https://mar-y-pesca.bestgold8899.workers.dev/">
@@ -20,11 +23,27 @@
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
-  "@type": "WebSite",
-  "name": "Mar & Pesca",
-  "url": "https://mar-y-pesca.bestgold8899.workers.dev/",
-  "description": "Previsiones meteorológicas y marítimas para preparar salidas de pesca en las localidades costeras de Marruecos.",
-  "inLanguage": ["es", "fr", "ar"]
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": "https://mar-y-pesca.bestgold8899.workers.dev/#website",
+      "name": "Mar & Pesca",
+      "alternateName": ["Mar y Pesca", "Mar & Pesca Marruecos"],
+      "url": "https://mar-y-pesca.bestgold8899.workers.dev/",
+      "description": "Previsiones meteorológicas y marítimas para preparar salidas de pesca en las localidades costeras de Marruecos.",
+      "inLanguage": ["es", "fr", "ar"],
+      "publisher": {
+        "@id": "https://mar-y-pesca.bestgold8899.workers.dev/#organization"
+      }
+    },
+    {
+      "@type": "Organization",
+      "@id": "https://mar-y-pesca.bestgold8899.workers.dev/#organization",
+      "name": "Mar & Pesca",
+      "alternateName": "Mar y Pesca",
+      "url": "https://mar-y-pesca.bestgold8899.workers.dev/"
+    }
+  ]
 }
 </script>
 <title>Mar &amp; Pesca – Previsión de Pesca, Mareas y Oleaje en Marruecos</title>
