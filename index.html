@@ -107,6 +107,7 @@ footer{text-align:center;border-top:1px solid var(--border);padding:16px 8px;col
 @media(max-width:540px){.visual-deck{min-height:350px;border-radius:17px}.hero-content{padding:17px 13px 14px}.hero-orb{width:76px;height:76px;right:9%;top:55px}.visual-grid{gap:6px;margin-top:137px}.visual-tile{padding:10px 8px;border-radius:12px}.visual-deck-caption{font-size:11px;max-width:230px}.visual-value{font-size:18px}.visual-label{font-size:10px}.visual-foot{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.hero-wave,.hero-live i{animation:none}}
 
+.tide-day-panel{margin:14px 0 16px;padding:15px;background:linear-gradient(160deg,#142d4b,#101d35);border:1px solid #285276;border-radius:15px;overflow:hidden}.tide-day-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.tide-day-title{font-size:16px;font-weight:850;color:#eaf7ff}.tide-day-sub{font-size:11px;color:#a9c1d9;margin:5px 0 8px}.tide-day-date{font-size:12px;color:#7dd3fc;font-weight:750}.tide-day-svg{display:block;width:100%;height:auto;min-height:190px;overflow:visible}.tide-day-legend{display:flex;gap:16px;flex-wrap:wrap;font-size:11px;color:#c7d9e9;margin-top:7px}.tide-legend-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}.tide-day-foot{font-size:10px;color:#91a9c0;margin-top:8px;line-height:1.45}@media(max-width:480px){.tide-day-panel{padding:11px}.tide-day-svg{min-height:165px}.tide-day-legend{gap:10px}}
 </style>
 </head>
 <body>
@@ -174,6 +175,12 @@ footer{text-align:center;border-top:1px solid var(--border);padding:16px 8px;col
   <div class="metric"><small id="illumLabel">Iluminación</small><b id="illumValue">—</b></div>
  </div>
 </div>
+<section class="tide-day-panel" aria-labelledby="tideDayTitle">
+ <div class="tide-day-head"><div><div class="tide-day-title" id="tideDayTitle">Evolución de la marea · 24 horas</div><div class="tide-day-sub" id="tideDaySub">Altura del agua y horas de pleamar y bajamar</div></div><div class="tide-day-date" id="tideDayDate">—</div></div>
+ <svg id="tideDayChart" class="tide-day-svg" viewBox="0 0 760 330" role="img" aria-label="Gráfico diario de altura de la marea"><text x="380" y="160" text-anchor="middle" fill="#a0aec0">Datos no disponibles</text></svg>
+ <div class="tide-day-legend"><span><i class="tide-legend-dot" style="background:#38bdf8"></i><span id="tideHighLegend">Pleamar</span></span><span><i class="tide-legend-dot" style="background:#fb7185"></i><span id="tideLowLegend">Bajamar</span></span></div>
+ <div class="tide-day-foot" id="tideDayFoot">La curva se interpola entre los extremos reales facilitados por la estación; no representa mediciones horarias.</div>
+</section>
 <div class="grid2">
  <div class="panel"><b id="tideCurveTitle">Estado actual de la marea</b><p class="sub" id="tideCurveSub">Indicación calculada con las pleamares y bajamares reales.</p><svg class="chart" id="tideChart" viewBox="0 0 360 360" role="img" aria-label="Estado circular de la marea"><text x="180" y="180" text-anchor="middle" fill="#a0aec0">Datos no disponibles</text></svg><p id="tideStateNote" class="month-circle-note">Datos no disponibles</p></div>
  <div class="panel"><b id="moonCalendarTitle">Calendario lunar</b><p class="sub" id="moonCalendarSub">Fase e iluminación por día, si TideCheck las proporciona.</p><div id="moonCalendar" class="empty">Datos no disponibles</div></div>
@@ -441,7 +448,7 @@ function renderTides(){
  $("nextHigh").textContent=tideText(high);$("nextLow").textContent=tideText(low);
  $("moonValue").textContent=moonPhaseLabel(conditions?.moonPhase);
  $("illumValue").textContent=conditions?.moonIllumination==null?tr("noData"):`${fmt(conditions.moonIllumination)}%`;
- renderTideChart(extremes);renderMonthRows(extremes,daily);renderMoon(daily);
+ renderTideChart(extremes);renderDailyTideChart(extremes);renderMonthRows(extremes,daily);renderMoon(daily);
 }
 function tideEventMs(e){
  const value=e?.time;
@@ -457,6 +464,44 @@ function tideType(e){
  if(/low|baja|low water/.test(type))return "low";
  return "";
 }
+
+function renderDailyTideChart(extremes){
+ const svg=$("tideDayChart");
+ const c=lang==="fr"?{title:"Évolution de la marée · 24 h",sub:"Hauteur de l’eau et heures de pleine et basse mer",high:"Pleine mer",low:"Basse mer",foot:"Courbe interpolée entre les extrêmes réels fournis par la station ; ce ne sont pas des mesures horaires.",no:"Données indisponibles",height:"Hauteur (m)"}:lang==="ar"?{title:"تغير المد والجزر · ٢٤ ساعة",sub:"ارتفاع المياه وأوقات المد والجزر",high:"المد",low:"الجزر",foot:"منحنى تقريبي بين القيم القصوى الفعلية التي توفرها المحطة، وليس قياسات كل ساعة.",no:"البيانات غير متاحة",height:"الارتفاع (م)"}:{title:"Evolución de la marea · 24 horas",sub:"Altura del agua y horas de pleamar y bajamar",high:"Pleamar",low:"Bajamar",foot:"Curva interpolada entre los extremos reales facilitados por la estación; no representa mediciones horarias.",no:"Datos no disponibles",height:"Altura (m)"};
+ $("tideDayTitle").textContent=c.title;$("tideDaySub").textContent=c.sub;$("tideHighLegend").textContent=c.high;$("tideLowLegend").textContent=c.low;$("tideDayFoot").textContent=c.foot;
+ const date=selectedDate||"";
+ $("tideDayDate").textContent=date?new Date(date+"T12:00:00").toLocaleDateString(lang==="ar"?"ar-MA":lang==="fr"?"fr-FR":"es-ES",{weekday:"short",day:"numeric",month:"short"}):"—";
+ const fail=()=>{svg.innerHTML='<text x="380" y="160" text-anchor="middle" fill="#a0aec0" font-size="16">'+c.no+'</text>';};
+ if(!date||!Array.isArray(extremes)){fail();return}
+ const events=extremes.map(e=>{
+  const type=tideType(e),height=num(e?.height),d=e?.localDate||dateOnly(e?.localTime||e?.time);
+  const tm=String(e?.localTime||"").match(/\d{1,2}:\d{2}/)?.[0];
+  const ms=d&&tm?Date.parse(d+"T"+tm):tideEventMs(e);
+  return {e,type,height,ms};
+ }).filter(v=>v.type&&Number.isFinite(v.ms)&&v.height!==null).sort((a,b)=>a.ms-b.ms);
+ const start=Date.parse(date+"T00:00:00"),end=start+86400000;
+ if(!Number.isFinite(start)){fail();return}
+ const before=[...events].reverse().find(v=>v.ms<=start),after=events.find(v=>v.ms>=end);
+ const pts=[before,...events.filter(v=>v.ms>start&&v.ms<end),after].filter(Boolean);
+ if(pts.length<3||!pts.some(v=>v.type==="high")||!pts.some(v=>v.type==="low")){fail();return}
+ for(let i=1;i<pts.length;i++)if(pts[i].type===pts[i-1].type){fail();return}
+ const min=Math.min(...pts.map(v=>v.height)),max=Math.max(...pts.map(v=>v.height)),pad=Math.max((max-min)*.22,.12),y0=min-pad,y1=max+pad;
+ const L=62,R=735,T=38,B=265,W=R-L;
+ const X=t=>L+(t-start)/86400000*W,Y=v=>B-(v-y0)/(y1-y0)*(B-T);
+ const valueAt=t=>{let i=0;while(i<pts.length-1&&pts[i+1].ms<t)i++;const a=pts[i],b=pts[Math.min(i+1,pts.length-1)];if(!a||!b||b.ms===a.ms)return a?.height??null;const p=Math.max(0,Math.min(1,(t-a.ms)/(b.ms-a.ms)));return a.height+(b.height-a.height)*(1-Math.cos(Math.PI*p))/2;};
+ const samples=[];for(let i=0;i<=96;i++){const t=start+i*86400000/96,v=valueAt(t);if(v!==null)samples.push([X(t),Y(v)]);}
+ if(samples.length<2){fail();return}
+ const path=samples.map((v,i)=>(i?"L":"M")+v[0].toFixed(1)+" "+v[1].toFixed(1)).join(" "),area=path+" L "+R+" "+B+" L "+L+" "+B+" Z";
+ let grid="";
+ for(let i=0;i<=4;i++){const v=y0+(y1-y0)*i/4,yy=Y(v);grid+='<line x1="'+L+'" y1="'+yy+'" x2="'+R+'" y2="'+yy+'" stroke="#ffffff18"/><text x="'+(L-10)+'" y="'+(yy+4)+'" text-anchor="end" fill="#b8c9da" font-size="12">'+v.toFixed(1)+'</text>';}
+ for(let i=0;i<=4;i++){const xx=L+W*i/4,lab=i===4?"24 h":i*6+" h";grid+='<line x1="'+xx+'" y1="'+T+'" x2="'+xx+'" y2="'+B+'" stroke="#ffffff12"/><text x="'+xx+'" y="'+(B+25)+'" text-anchor="middle" fill="#b8c9da" font-size="12">'+lab+'</text>';}
+ let marks="";
+ pts.filter(v=>v.ms>=start&&v.ms<=end).forEach(v=>{const xx=X(v.ms),yy=Y(v.height),high=v.type==="high",color=high?"#38bdf8":"#fb7185",tm=v.e.localTime||new Date(v.ms).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",hour12:false});marks+='<line x1="'+xx+'" y1="'+(yy+9)+'" x2="'+xx+'" y2="'+B+'" stroke="'+color+'" stroke-dasharray="3 5" opacity=".35"/><circle cx="'+xx+'" cy="'+yy+'" r="8" fill="'+color+'" stroke="#eaf7ff" stroke-width="2"/><text x="'+xx+'" y="'+(yy-17)+'" text-anchor="middle" fill="'+color+'" font-size="13" font-weight="700">'+tm+'</text><text x="'+xx+'" y="'+(yy+25)+'" text-anchor="middle" fill="#e2e8f0" font-size="11">'+v.height.toFixed(2)+' m</text>';});
+ const now=new Date(),today=date===now.getFullYear()+"-"+String(now.getMonth()+1).padStart(2,"0")+"-"+String(now.getDate()).padStart(2,"0");let nowMark="";
+ if(today&&Date.now()>=start&&Date.now()<=end){const xx=X(Date.now());nowMark='<line x1="'+xx+'" y1="'+T+'" x2="'+xx+'" y2="'+B+'" stroke="#facc15" stroke-width="2" stroke-dasharray="5 4"/><path d="M '+(xx-5)+' '+(T-8)+' L '+(xx+5)+' '+(T-8)+' L '+xx+' '+T+' Z" fill="#facc15"/>';}
+ svg.innerHTML='<defs><linearGradient id="tideFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#38bdf8" stop-opacity=".34"/><stop offset="1" stop-color="#38bdf8" stop-opacity=".02"/></linearGradient></defs><text x="'+L+'" y="17" fill="#a9c1d9" font-size="12">'+c.height+'</text>'+grid+'<path d="'+area+'" fill="url(#tideFill)"/><path d="'+path+'" fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>'+marks+nowMark;
+}
+
 function renderTideChart(extremes){
  const svg=$("tideChart"),now=Date.now();
  const events=(extremes||[]).map(e=>({e,ms:tideEventMs(e),type:tideType(e)})).filter(x=>Number.isFinite(x.ms)&&x.type).sort((a,b)=>a.ms-b.ms);
