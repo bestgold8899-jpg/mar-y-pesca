@@ -73,6 +73,40 @@ footer{text-align:center;border-top:1px solid var(--border);padding:16px 8px;col
 @media(max-width:420px){.visual-deck{padding:13px}.visual-grid{gap:6px}.visual-tile{padding:10px 7px}.visual-label{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.visual-wave:before,.visual-wave:after{animation:none}}
 
+
+/* HERO MARINO: experiencia visual principal */
+.visual-deck{isolation:isolate;position:relative;overflow:hidden;min-height:370px;margin:14px 0 22px;padding:0;border:1px solid #2875a0;border-radius:22px;background:linear-gradient(155deg,#06182e 0%,#0b3150 42%,#07506a 100%);box-shadow:0 18px 55px #02081799}
+.visual-deck:before{content:"";position:absolute;inset:0;z-index:-1;background:radial-gradient(ellipse at 78% 18%,#38bdf82e,transparent 38%),linear-gradient(180deg,#06182e55 0%,transparent 60%)}
+.hero-content{position:relative;z-index:2;padding:22px 22px 18px}
+.hero-sky{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.hero-orb{position:absolute;width:105px;height:105px;right:12%;top:38px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fff7d6,#facc75 48%,#f59e0b 100%);box-shadow:0 0 50px #fbbf2466}
+.hero-stars{position:absolute;inset:0;background-image:radial-gradient(#dbeafeaa 1px,transparent 1px),radial-gradient(#bae6fd88 1px,transparent 1px);background-size:67px 67px,103px 103px;background-position:10px 10px,40px 28px;opacity:.35}
+.visual-deck-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;position:relative;z-index:4}
+.visual-deck-kicker{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#7dd3fc;font-weight:850}
+.visual-deck-title{font-size:clamp(27px,5vw,43px);font-weight:900;line-height:1.05;letter-spacing:-.04em;margin:9px 0 6px;text-shadow:0 3px 18px #02081799}
+.visual-deck-caption{font-size:13px;color:#c6e4f5;max-width:390px}
+.hero-live{display:flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid #7dd3fc55;border-radius:30px;background:#06243caa;color:#d9f4ff;font-size:10px;font-weight:800;white-space:nowrap}
+.hero-live i{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 10px #4ade80;animation:hero-pulse 1.8s infinite}
+.hero-wave-scene{position:absolute;z-index:0;left:0;right:0;top:75px;height:200px;overflow:hidden;opacity:.78;pointer-events:none}
+.hero-horizon{position:absolute;left:0;right:0;bottom:56px;height:1px;background:linear-gradient(90deg,transparent,#7dd3fc88,transparent)}
+.hero-wave{position:absolute;left:-25%;width:150%;height:120px;bottom:-55px;border-radius:44% 52% 0 0/25% 35% 0 0;transform:rotate(-3deg)}
+.wave-back{bottom:-30px;background:linear-gradient(180deg,#0e7490aa,#075985);animation:hero-wave-a 11s ease-in-out infinite alternate}
+.wave-mid{bottom:-56px;background:linear-gradient(180deg,#0891b2dd,#0369a1);animation:hero-wave-b 8s ease-in-out infinite alternate}
+.wave-front{bottom:-79px;background:linear-gradient(180deg,#38bdf8,#075985);animation:hero-wave-a 6s ease-in-out infinite alternate-reverse}
+.visual-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin-top:138px;position:relative;z-index:3}
+.visual-tile{min-width:0;padding:13px 14px;border:1px solid #a5e7ff35;border-radius:15px;background:linear-gradient(145deg,#082b46dd,#071b31eF);backdrop-filter:blur(8px);box-shadow:0 8px 22px #02081744}
+.visual-icon{font-size:25px;line-height:1.1}
+.visual-value{font-size:clamp(19px,4vw,28px);font-weight:900;letter-spacing:-.04em;margin-top:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#f0f9ff}
+.visual-label{font-size:11px;color:#b7d8ea;margin-top:3px}
+.visual-note{font-size:10px;color:#7dd3fc;margin-top:6px;min-height:13px}
+.visual-moon{display:inline-grid;place-items:center;width:31px;height:31px;border-radius:50%;font-size:27px;filter:drop-shadow(0 0 12px #fde68a88)}
+.visual-foot{font-size:10px;color:#b6d7e8;margin-top:12px;position:relative;z-index:3}
+@keyframes hero-wave-a{from{transform:translateX(-2%) rotate(-3deg)}to{transform:translateX(5%) rotate(2deg)}}
+@keyframes hero-wave-b{from{transform:translateX(4%) rotate(2deg)}to{transform:translateX(-4%) rotate(-2deg)}}
+@keyframes hero-pulse{50%{opacity:.45;box-shadow:0 0 2px #4ade80}}
+@media(max-width:540px){.visual-deck{min-height:350px;border-radius:17px}.hero-content{padding:17px 13px 14px}.hero-orb{width:76px;height:76px;right:9%;top:55px}.visual-grid{gap:6px;margin-top:137px}.visual-tile{padding:10px 8px;border-radius:12px}.visual-deck-caption{font-size:11px;max-width:230px}.visual-value{font-size:18px}.visual-label{font-size:10px}.visual-foot{font-size:9px}}
+@media(prefers-reduced-motion:reduce){.hero-wave,.hero-live i{animation:none}}
+
 </style>
 </head>
 <body>
@@ -85,6 +119,20 @@ footer{text-align:center;border-top:1px solid var(--border);padding:16px 8px;col
   <option value="mdiq">M'diq</option><option value="martil">Martil</option><option value="fnideq">Fnideq / Castillejos</option><option value="tanger">Tánger</option><option value="asilah">Asilah</option><option value="larache">Larache</option><option value="al-hoceima">Al Hoceima</option><option value="nador">Nador</option><option value="casablanca">Casablanca</option><option value="mehdia">Mehdia</option><option value="el-jadida">El Jadida</option><option value="safi">Safi</option><option value="essaouira">Essaouira</option><option value="agadir">Agadir</option><option value="sidi-ifni">Sidi Ifni</option><option value="tan-tan-plage">Tan-Tan Plage (El Ouatia)</option><option value="tarfaya">Tarfaya</option><option value="laayoune-plage">Laayoune Plage (Foum El Oued)</option><option value="dakhla">Dakhla</option>
  </select>
 </div>
+<section class="visual-deck" id="visualDeck" aria-label="Panel principal del estado del mar">
+ <div class="hero-sky" aria-hidden="true"><span class="hero-orb"></span><span class="hero-stars"></span></div>
+ <div class="hero-content">
+  <div class="visual-deck-head"><div><div class="visual-deck-kicker" id="visualKicker">MAR &amp; PESCA · EL MAR, ANTES DE SALIR</div><div class="visual-deck-title" id="visualTitle">El mar, en directo</div><div class="visual-deck-caption" id="visualCaption">Tu resumen marítimo para hoy</div></div><span class="hero-live"><i></i><span id="visualDayBadge">7 DÍAS</span></span></div>
+  <div class="hero-wave-scene" aria-hidden="true"><div class="hero-wave wave-back"></div><div class="hero-wave wave-mid"></div><div class="hero-wave wave-front"></div><div class="hero-horizon"></div></div>
+  <div class="visual-grid">
+   <div class="visual-tile"><div class="visual-icon" aria-hidden="true">💨</div><div class="visual-value" id="visualWind">—</div><div class="visual-label" id="visualWindLabel">Viento máximo</div><div class="visual-note" id="visualWindNote">km/h</div></div>
+   <div class="visual-tile"><div class="visual-icon" aria-hidden="true">🌊</div><div class="visual-value" id="visualWave">—</div><div class="visual-label" id="visualWaveLabel">Altura del oleaje</div><div class="visual-note" id="visualWaveNote">Oleaje previsto</div></div>
+   <div class="visual-tile moon-tile"><div class="visual-icon visual-moon" id="visualMoonIcon" aria-hidden="true">🌙</div><div class="visual-value" id="visualMoon">—</div><div class="visual-label" id="visualMoonLabel">Fase lunar</div><div class="visual-note" id="visualIllum">Iluminación: —</div></div>
+  </div>
+  <div class="visual-foot" id="visualFoot">Datos reales disponibles para la localidad seleccionada.</div>
+ </div>
+</section>
+
 <section class="seo-content" aria-labelledby="seoTitle">
  <h2 id="seoTitle">Previsión de pesca en Marruecos: consulta el estado del mar antes de salir</h2>
  <p id="seoIntro">Mar &amp; Pesca reúne información meteorológica y marítima para ayudarte a preparar tus jornadas de pesca en la costa de Marruecos. Selecciona una localidad y consulta el viento, las rachas, el oleaje, las mareas, la lluvia y las fases lunares.</p>
@@ -93,15 +141,7 @@ footer{text-align:center;border-top:1px solid var(--border);padding:16px 8px;col
 </section>
 <div id="status" class="status">Conectando con Mar &amp; Pesca…</div>
 
-<section class="visual-deck" id="visualDeck" aria-label="Resumen visual de las condiciones">
- <div class="visual-deck-head"><div><div class="visual-deck-kicker" id="visualKicker">MAR &amp; PESCA · EN UN VISTAZO</div><div class="visual-deck-title" id="visualTitle">Así está el mar</div><div class="visual-deck-caption" id="visualCaption">Resumen de los datos disponibles para el día seleccionado</div></div><span class="badge" id="visualDayBadge">7 DÍAS</span></div>
- <div class="visual-grid">
-  <div class="visual-tile"><div class="visual-icon" aria-hidden="true">💨</div><div class="visual-value" id="visualWind">—</div><div class="visual-label" id="visualWindLabel">Viento máximo</div><div class="visual-note" id="visualWindNote">km/h</div></div>
-  <div class="visual-tile"><div class="visual-icon" aria-hidden="true">🌊</div><div class="visual-value" id="visualWave">—</div><div class="visual-label" id="visualWaveLabel">Altura del oleaje</div><div class="visual-wave" aria-hidden="true"></div></div>
-  <div class="visual-tile"><div class="visual-icon visual-moon" aria-hidden="true">🌙</div><div class="visual-value" id="visualMoon">—</div><div class="visual-label" id="visualMoonLabel">Fase lunar</div><div class="visual-note" id="visualIllum">Iluminación: —</div></div>
- </div>
- <div class="visual-foot" id="visualFoot">Solo mostramos valores recibidos de las fuentes; si falta un dato, aparece como no disponible.</div>
-</section>
+
 
 
 <h2 id="forecastTitle">Pronóstico marítimo y meteorológico — 7 días</h2>
@@ -502,13 +542,17 @@ function renderActivity(){
 function renderAll(){renderDays();renderWeather();renderTides();renderActivity();renderVisualSnapshot()}
 
 function renderVisualSnapshot(){
- const copy=lang==="fr"?{title:"La mer en un coup d'œil",caption:"Résumé des données pour le jour sélectionné",wind:"Vent maximal",wave:"Hauteur des vagues",moon:"Phase lunaire",illum:"Éclairage",foot:"Valeurs issues des sources connectées. Aucune donnée n'est inventée.",day:"7 JOURS"}:lang==="ar"?{title:"حالة البحر بنظرة واحدة",caption:"ملخص البيانات لليوم المحدد",wind:"أقصى سرعة للرياح",wave:"ارتفاع الأمواج",moon:"طور القمر",illum:"الإضاءة",foot:"نعرض البيانات الواردة من المصادر فقط دون اختلاق قيم.",day:"٧ أيام"}:{title:"Así está el mar",caption:"Resumen de los datos disponibles para el día seleccionado",wind:"Viento máximo",wave:"Altura del oleaje",moon:"Fase lunar",illum:"Iluminación",foot:"Solo mostramos valores recibidos de las fuentes; no inventamos datos.",day:"7 DÍAS"};
- $("visualTitle").textContent=copy.title;$("visualCaption").textContent=copy.caption;$("visualWindLabel").textContent=copy.wind;$("visualWaveLabel").textContent=copy.wave;$("visualMoonLabel").textContent=copy.moon;$("visualFoot").textContent=copy.foot;$("visualDayBadge").textContent=copy.day;
+ const copy=lang==="fr"?{title:"La mer, en un coup d'œil",caption:"Votre aperçu maritime pour le jour sélectionné",wind:"Vent maximal",wave:"Hauteur des vagues",moon:"Phase lunaire",illum:"Éclairage",foot:"Données réelles des sources connectées. Les valeurs absentes restent indisponibles.",day:"PRÉVISION 7 JOURS"}:lang==="ar"?{title:"البحر بنظرة واحدة",caption:"ملخص حالة البحر لليوم المحدد",wind:"أقصى سرعة للرياح",wave:"ارتفاع الأمواج",moon:"طور القمر",illum:"الإضاءة",foot:"بيانات فعلية من المصادر المتصلة، ولا نعرض قيماً غير متوفرة.",day:"توقعات ٧ أيام"}:{title:"El mar, en directo",caption:"Tu resumen marítimo para el día seleccionado",wind:"Viento máximo",wave:"Altura del oleaje",moon:"Fase lunar",illum:"Iluminación",foot:"Datos reales de las fuentes conectadas. Los valores que faltan no se inventan.",day:"PRONÓSTICO 7 DÍAS"};
+ const loc=LOCATIONS[$("location").value]?.name||"";
+ $("visualTitle").textContent=copy.title;$("visualCaption").textContent=(loc?loc+" · ":"")+copy.caption;$("visualWindLabel").textContent=copy.wind;$("visualWaveLabel").textContent=copy.wave;$("visualMoonLabel").textContent=copy.moon;$("visualFoot").textContent=copy.foot;$("visualDayBadge").textContent=copy.day;
  const no=tr("noData"),wind=$("windMaxValue").textContent,wave=$("waveValue").textContent,moon=$("moonValue").textContent,illum=$("illumValue").textContent;
  $("visualWind").textContent=wind&&wind!=="—"?wind:no;
  $("visualWave").textContent=wave&&wave!=="—"?wave:no;
  $("visualMoon").textContent=moon&&moon!=="—"?moon:no;
  $("visualIllum").textContent=(lang==="fr"?"Éclairage : ":lang==="ar"?"الإضاءة: ":"Iluminación: ")+(illum&&illum!=="—"?illum:no);
+ const phase=String(moon||"").toLowerCase();let icon="🌙";
+ if(/new|nueva|nouvelle|محاق/.test(phase))icon="🌑";else if(/full|llena|pleine|بدر/.test(phase))icon="🌕";else if(/first quarter|cuarto creciente|premier quartier|التربيع الأول/.test(phase))icon="🌓";else if(/last quarter|cuarto menguante|dernier quartier|التربيع الأخير/.test(phase))icon="🌗";else if(/wax|creciente|croissant|متزايد/.test(phase))icon="🌔";else if(/wan|menguante|décroissant|متناقص/.test(phase))icon="🌖";
+ $("visualMoonIcon").textContent=icon;
 }
 
 function normalizeSST(raw){const p=raw?.data??raw;return {temperature:num(p?.temperature_c??p?.temperature??p?.sst),date:p?.date??p?.fecha??null,source:p?.source??p?.fuente??""};}
