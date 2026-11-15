@@ -50,6 +50,29 @@ footer{text-align:center;border-top:1px solid var(--border);padding:16px 8px;col
 [dir=rtl] body{text-align:right}[dir=rtl] header,[dir=rtl] .brand{direction:rtl}
 @media(max-width:820px){.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}}
 @media(max-width:620px){body{padding:10px}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}.brand h1{font-size:18px}}
+
+/* Panel visual destacado: una lectura rápida de las condiciones reales */
+.visual-deck{position:relative;overflow:hidden;margin:12px 0 20px;padding:17px;border:1px solid #285276;border-radius:16px;background:linear-gradient(135deg,#102b49 0%,#142747 48%,#1c2541 100%);box-shadow:0 12px 34px #02081755}
+.visual-deck:before{content:"";position:absolute;width:210px;height:210px;border-radius:50%;right:-95px;top:-115px;background:#38bdf81c;pointer-events:none}
+.visual-deck-head{display:flex;justify-content:space-between;align-items:center;gap:8px;position:relative}
+.visual-deck-kicker{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#7dd3fc;font-weight:800}
+.visual-deck-title{font-size:17px;font-weight:800;margin:4px 0 3px}
+.visual-deck-caption{font-size:11px;color:#b6c7dc}
+.visual-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;margin-top:15px;position:relative}
+.visual-tile{min-width:0;padding:12px 10px;border:1px solid #ffffff16;border-radius:12px;background:#07172b88}
+.visual-icon{font-size:24px;line-height:1.2}
+.visual-value{font-size:clamp(16px,4vw,22px);font-weight:850;letter-spacing:-.03em;margin-top:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.visual-label{font-size:11px;color:#a9c1d9;margin-top:3px}
+.visual-note{font-size:10px;color:#7dd3fc;margin-top:7px;min-height:13px}
+.visual-wave{height:25px;position:relative;overflow:hidden;margin-top:6px;opacity:.9}
+.visual-wave:before,.visual-wave:after{content:"";position:absolute;left:-30%;width:160%;height:26px;border-top:2px solid #38bdf8;border-radius:50%;animation:sea-drift 5s linear infinite}
+.visual-wave:after{top:7px;left:-10%;border-color:#7dd3fc;opacity:.55;animation-duration:7s;animation-direction:reverse}
+.visual-moon{display:inline-grid;place-items:center;width:29px;height:29px;border-radius:50%;font-size:24px;vertical-align:middle;filter:drop-shadow(0 0 8px #fde68a55)}
+.visual-foot{font-size:10px;color:#a9c1d9;margin-top:12px;position:relative}
+@keyframes sea-drift{from{transform:translateX(0)}to{transform:translateX(25%)}}
+@media(max-width:420px){.visual-deck{padding:13px}.visual-grid{gap:6px}.visual-tile{padding:10px 7px}.visual-label{font-size:10px}}
+@media(prefers-reduced-motion:reduce){.visual-wave:before,.visual-wave:after{animation:none}}
+
 </style>
 </head>
 <body>
@@ -69,6 +92,17 @@ footer{text-align:center;border-top:1px solid var(--border);padding:16px 8px;col
  <p id="seoDetails">Consulta las condiciones en localidades como M’diq, Martil, Fnideq, Tánger, Asilah, Larache, Al Hoceima, Nador, Casablanca, Mehdia, El Jadida, Safi, Essaouira, Agadir y Dakhla. Los datos disponibles pueden variar según la localidad y la respuesta de cada fuente.</p>
 </section>
 <div id="status" class="status">Conectando con Mar &amp; Pesca…</div>
+
+<section class="visual-deck" id="visualDeck" aria-label="Resumen visual de las condiciones">
+ <div class="visual-deck-head"><div><div class="visual-deck-kicker" id="visualKicker">MAR &amp; PESCA · EN UN VISTAZO</div><div class="visual-deck-title" id="visualTitle">Así está el mar</div><div class="visual-deck-caption" id="visualCaption">Resumen de los datos disponibles para el día seleccionado</div></div><span class="badge" id="visualDayBadge">7 DÍAS</span></div>
+ <div class="visual-grid">
+  <div class="visual-tile"><div class="visual-icon" aria-hidden="true">💨</div><div class="visual-value" id="visualWind">—</div><div class="visual-label" id="visualWindLabel">Viento máximo</div><div class="visual-note" id="visualWindNote">km/h</div></div>
+  <div class="visual-tile"><div class="visual-icon" aria-hidden="true">🌊</div><div class="visual-value" id="visualWave">—</div><div class="visual-label" id="visualWaveLabel">Altura del oleaje</div><div class="visual-wave" aria-hidden="true"></div></div>
+  <div class="visual-tile"><div class="visual-icon visual-moon" aria-hidden="true">🌙</div><div class="visual-value" id="visualMoon">—</div><div class="visual-label" id="visualMoonLabel">Fase lunar</div><div class="visual-note" id="visualIllum">Iluminación: —</div></div>
+ </div>
+ <div class="visual-foot" id="visualFoot">Solo mostramos valores recibidos de las fuentes; si falta un dato, aparece como no disponible.</div>
+</section>
+
 
 <h2 id="forecastTitle">Pronóstico marítimo y meteorológico — 7 días</h2>
 <div class="days" id="days"><div class="empty">Cargando pronóstico…</div></div>
@@ -465,7 +499,18 @@ function renderActivity(){
  const details=factors.map(f=>`${f.name}: ${Math.round(f.score)}/100`).join(" · ");
  $("activityExplain").textContent=(lang==="fr"?"Estimation indicative des conditions générales depuis la côte — pas une garantie de capture. ":lang==="ar"?"تقدير إرشادي للظروف العامة للصيد من الساحل، وليس ضماناً للصيد. ":"Estimación orientativa de las condiciones generales desde costa; no garantiza capturas. ")+details;
 }
-function renderAll(){renderDays();renderWeather();renderTides();renderActivity()}
+function renderAll(){renderDays();renderWeather();renderTides();renderActivity();renderVisualSnapshot()}
+
+function renderVisualSnapshot(){
+ const copy=lang==="fr"?{title:"La mer en un coup d'œil",caption:"Résumé des données pour le jour sélectionné",wind:"Vent maximal",wave:"Hauteur des vagues",moon:"Phase lunaire",illum:"Éclairage",foot:"Valeurs issues des sources connectées. Aucune donnée n'est inventée.",day:"7 JOURS"}:lang==="ar"?{title:"حالة البحر بنظرة واحدة",caption:"ملخص البيانات لليوم المحدد",wind:"أقصى سرعة للرياح",wave:"ارتفاع الأمواج",moon:"طور القمر",illum:"الإضاءة",foot:"نعرض البيانات الواردة من المصادر فقط دون اختلاق قيم.",day:"٧ أيام"}:{title:"Así está el mar",caption:"Resumen de los datos disponibles para el día seleccionado",wind:"Viento máximo",wave:"Altura del oleaje",moon:"Fase lunar",illum:"Iluminación",foot:"Solo mostramos valores recibidos de las fuentes; no inventamos datos.",day:"7 DÍAS"};
+ $("visualTitle").textContent=copy.title;$("visualCaption").textContent=copy.caption;$("visualWindLabel").textContent=copy.wind;$("visualWaveLabel").textContent=copy.wave;$("visualMoonLabel").textContent=copy.moon;$("visualFoot").textContent=copy.foot;$("visualDayBadge").textContent=copy.day;
+ const no=tr("noData"),wind=$("windMaxValue").textContent,wave=$("waveValue").textContent,moon=$("moonValue").textContent,illum=$("illumValue").textContent;
+ $("visualWind").textContent=wind&&wind!=="—"?wind:no;
+ $("visualWave").textContent=wave&&wave!=="—"?wave:no;
+ $("visualMoon").textContent=moon&&moon!=="—"?moon:no;
+ $("visualIllum").textContent=(lang==="fr"?"Éclairage : ":lang==="ar"?"الإضاءة: ":"Iluminación: ")+(illum&&illum!=="—"?illum:no);
+}
+
 function normalizeSST(raw){const p=raw?.data??raw;return {temperature:num(p?.temperature_c??p?.temperature??p?.sst),date:p?.date??p?.fecha??null,source:p?.source??p?.fuente??""};}
 async function load({silent=false}={}){
  const locationId=$("location").value,loc=LOCATIONS[locationId];
