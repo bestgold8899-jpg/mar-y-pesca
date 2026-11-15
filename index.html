@@ -411,7 +411,7 @@ function moonPhaseLabel(value){
  return labels[lang][id];
 }
 function renderTides(){
- if(!tidePayload){["stationName","nextHigh","nextLow","moonValue","illumValue"].forEach(id=>$(id).textContent=tr("noData"));$("monthRows").innerHTML=`<tr><td colspan="4" class="empty">${tr("noData")}</td></tr>`;return}
+ if(!tidePayload){["stationName","nextHigh","nextLow","moonValue","illumValue"].forEach(id=>$(id).textContent=tr("noData"));$("monthRows").innerHTML=`<tr><td colspan="4" class="empty">${tr("noData")}</td></tr>`;renderDailyTideChart([]);return}
  const {station,extremes,series,conditions,daily,datum,timezone}=tidePayload;
  const requestedLocation=LOCATIONS[$("location").value]?.name||"";
  const physicalStation=station?.name||tr("noData");
