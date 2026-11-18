@@ -68,8 +68,14 @@ jobs:
             exit 1
           fi
 
+          FAILED_LOCATIONS=()
+
           while IFS='|' read -r LOCATION LAT LON; do
             [ -z "$LOCATION" ] && continue
+
+            # Aísla cada localidad: un fallo no debe cancelar las siguientes.
+            if (
+              set -euo pipefail
 
             echo ""
             echo "=========================================="
@@ -236,6 +242,13 @@ jobs:
             echo ""
             echo "Oleaje enviado correctamente: $LOCATION"
 
+            ); then
+              echo "RESULTADO: $LOCATION procesada y enviada correctamente."
+            else
+              echo "::warning::Falló el procesamiento de $LOCATION. Se continúa con la siguiente localidad."
+              FAILED_LOCATIONS+=("$LOCATION")
+            fi
+
           done <<'LOCATIONS'
           mdiq|35.684|-5.326
           martil|35.617|-5.275
@@ -257,6 +270,13 @@ jobs:
           tarfaya|27.937|-12.927
           laayoune-plage|27.1|-13.43
           LOCATIONS
+
+          if [ "${#FAILED_LOCATIONS[@]}" -gt 0 ]; then
+            echo ""
+            echo "::error::Localidades con errores: ${FAILED_LOCATIONS[*]}"
+            echo "Las demás localidades sí se han procesado; revisa los avisos anteriores."
+            exit 1
+          fi
 
       - name: Guardar resultados JSON
         if: always()
