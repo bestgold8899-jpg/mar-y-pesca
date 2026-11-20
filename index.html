@@ -375,7 +375,7 @@ function normalizeForecast(raw){
  const current=response?.current??root?.current??{};
  const d=(...keys)=>pickArray(daily,keys),h=(...keys)=>pickArray(hourly,keys);
  const time=d("time","date","dates");
- const days=time.map((date,i)=>({date:dateOnly(date),tmin:d("temperature_2m_min","tempmin")[i],tmax:d("temperature_2m_max","tempmax")[i],wind:d("wind_speed_10m_max","windspeed")[i],gust:d("wind_gusts_10m_max","windgust")[i],code:d("weather_code","weathercode","weatherCode","icon","conditions")[i],cloud:d("cloud_cover_mean","cloudcover","cloud_cover")[i],rain:d("precipitation_sum","precip")[i],pressure:d("pressure_mean","pressure")[i]}));
+ const days=time.map((date,i)=>({date:dateOnly(date),tmin:d("temperature_2m_min","tempmin")[i],tmax:d("temperature_2m_max","tempmax")[i],wind:d("wind_speed_10m_max","windspeed")[i],gustMin:d("wind_gusts_10m_min","windgustmin","windgust_min")[i],gustMax:d("wind_gusts_10m_max","windgustmax","windgust_max","windgust")[i],gust:d("wind_gusts_10m_max","windgustmax","windgust_max","windgust")[i],code:d("weather_code","weathercode","weatherCode","icon","conditions")[i],cloud:d("cloud_cover_mean","cloudcover","cloud_cover")[i],rain:d("precipitation_sum","precip")[i],pressure:d("pressure_mean","pressure")[i]}));
  const htime=h("time","datetime");
  const hours=htime.map((t,i)=>({time:t,temp:h("temperature_2m","temp")[i],rain:h("precipitation","precip")[i],showers:h("showers")[i],wind:h("wind_speed_10m","windspeed")[i],dir:h("wind_direction_10m","winddir")[i],gust:h("wind_gusts_10m","windgust")[i],code:h("weather_code","weathercode","weatherCode","icon","conditions")[i],cloud:h("cloud_cover","cloudcover")[i],pressure:h("pressure","pressure_msl","pressure_msl_hpa")[i]}));
  return {days,hours,current,utcOffsetSeconds:num(response?.utc_offset_seconds??root?.utc_offset_seconds)??3600};
@@ -448,11 +448,15 @@ function renderWeather(){
  const rows=(forecast?.hours||[]).filter(h=>dateOnly(h.time)===selectedDate);
  const extrema=values=>{const valid=values.map(num).filter(v=>v!==null);return valid.length?{min:Math.min(...valid),max:Math.max(...valid)}:null};
  const windRange=extrema(rows.map(h=>h.wind));
- const gustRange=extrema(rows.map(h=>h.gust));
+ const hourlyGustRange=extrema(rows.map(h=>h.gust));
+ // Prioriza los extremos diarios calculados por el Worker; usa las horas solo como respaldo.
+ // Visual Crossing ofrece windgust diario como máximo, pero no siempre ofrece un mínimo diario.
+ const gustMin=num(day?.gustMin)??hourlyGustRange?.min??null;
+ const gustMax=num(day?.gustMax)??num(day?.gust)??hourlyGustRange?.max??null;
  $("windMinValue").textContent=windRange?`${fmt(windRange.min)} km/h`:tr("noData");
  $("windMaxValue").textContent=windRange?`${fmt(windRange.max)} km/h`:tr("noData");
- $("gustMinValue").textContent=gustRange?`${fmt(gustRange.min)} km/h`:tr("noGust");
- $("gustMaxValue").textContent=gustRange?`${fmt(gustRange.max)} km/h`:tr("noGust");
+ $("gustMinValue").textContent=gustMin!==null?`${fmt(gustMin)} km/h`:tr("noGust");
+ $("gustMaxValue").textContent=gustMax!==null?`${fmt(gustMax)} km/h`:tr("noGust");
  const dayWaves=wavesForDate(selectedDate);
  if(dayWaves.length){
   const heights=dayWaves.map(w=>w.height).filter(Number.isFinite);
