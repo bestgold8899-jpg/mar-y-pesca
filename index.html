@@ -504,7 +504,8 @@ function moonPhaseLabel(value){
  const labels={
   es:{new:"Luna nueva",waxingCrescent:"Luna creciente",firstQuarter:"Cuarto creciente",waxingGibbous:"Gibosa creciente",full:"Luna llena",waningGibbous:"Gibosa menguante",lastQuarter:"Cuarto menguante",waningCrescent:"Luna menguante"},
   fr:{new:"Nouvelle lune",waxingCrescent:"Premier croissant",firstQuarter:"Premier quartier",waxingGibbous:"Gibbeuse croissante",full:"Pleine lune",waningGibbous:"Gibbeuse décroissante",lastQuarter:"Dernier quartier",waningCrescent:"Dernier croissant"},
-  ar:{new:"المحاق",waxingCrescent:"هلال متزايد",firstQuarter:"التربيع الأول",waxingGibbous:"أحدب متزايد",full:"البدر",waningGibbous:"أحدب متناقص",lastQuarter:"التربيع الأخير",waningCrescent:"هلال متناقص"}
+  ar:{new:"المحاق",waxingCrescent:"هلال متزايد",firstQuarter:"التربيع الأول",waxingGibbous:"أحدب متزايد",full:"البدر",waningGibbous:"أحدب متناقص",lastQuarter:"التربيع الأخير",waningCrescent:"هلال متناقص"},
+  en:{new:"New moon",waxingCrescent:"Waxing crescent",firstQuarter:"First quarter",waxingGibbous:"Waxing gibbous",full:"Full moon",waningGibbous:"Waning gibbous",lastQuarter:"Last quarter",waningCrescent:"Waning crescent"}
  };
  return labels[lang][id];
 }
@@ -709,7 +710,8 @@ function renderBestFishingTime(){
  });
  host.innerHTML=entries.map(v=>{
   const match=String(v.time).match(/T(\d{2}:\d{2})/),time=match?match[1]:String(v.time).slice(-5);
-  return '<div class="fishing-hour '+v.kind+'"><time>'+esc(time)+'</time><strong>'+esc(v.label)+(v.score===undefined?"":' · '+v.score+'/100')+'</strong><small>'+esc(v.details)+'</small></div>';
+  const explanation=v.kind==="unknown"?copy.missing:(lang==="en"?"Tap to review the measured conditions for this hour.":lang==="fr"?"Touchez pour consulter les conditions mesurées à cette heure.":lang==="ar"?"اضغط لعرض الظروف المسجلة في هذه الساعة.":"Pulsa para consultar las condiciones registradas en esta hora.");
+  return '<details class="fishing-hour '+v.kind+'"><summary><time>'+esc(time)+'</time><strong>'+esc(v.label)+(v.score===undefined?"":' · '+v.score+'/100')+'</strong><small>'+esc(v.details)+'</small></summary><small class="hour-extra">'+esc(explanation)+' '+esc(v.details)+'</small></details>';
  }).join("");
 }
 let fishingLeafletMap=null,fishingMapLayer=null;
