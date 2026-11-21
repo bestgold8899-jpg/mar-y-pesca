@@ -444,7 +444,7 @@ function renderDays(){
  if(!days.length){host.innerHTML=`<div class="empty">${tr("noData")}</div>`;return}
  days.forEach(d=>{
   const el=document.createElement("div");el.className="day"+(d.date===selectedDate?" active":"");
-  el.innerHTML=`<strong>${new Date(d.date+"T12:00:00").toLocaleDateString(lang==="ar"?"ar-MA":lang==="fr"?"fr-FR":"es-ES",{weekday:"short"})}</strong><small>${d.date}</small><span class="icon">${weatherIcon(d.code,d.rain,d.cloud)}</span><b>${d.tmin==null&&d.tmax==null?tr("noData"):`${fmt(d.tmin)}° / ${fmt(d.tmax)}°`}</b><small>${d.wind==null?tr("noData"):`${fmt(d.wind)} km/h`}</small><small>${d.rain==null?tr("noData"):`${fmt(d.rain,1)} mm`}</small>`;
+  el.innerHTML=`<strong>${new Date(d.date+"T12:00:00").toLocaleDateString(lang==="ar"?"ar-MA":lang==="fr"?"fr-FR":lang==="en"?"en-GB":"es-ES",{weekday:"short"})}</strong><small>${d.date}</small><span class="icon">${weatherIcon(d.code,d.rain,d.cloud)}</span><b>${d.tmin==null&&d.tmax==null?tr("noData"):`${fmt(d.tmin)}° / ${fmt(d.tmax)}°`}</b><small>${d.wind==null?tr("noData"):`${fmt(d.wind)} km/h`}</small><small>${d.rain==null?tr("noData"):`${fmt(d.rain,1)} mm`}</small>`;
   el.onclick=()=>{selectedDate=d.date;renderAll()};host.appendChild(el);
  });
 }
@@ -758,32 +758,39 @@ function renderFishingMapVisibility(){
 function renderAll(){renderDays();renderWeather();renderTides();renderActivity();renderVisualSnapshot();renderBestFishingTime();renderFishingMapVisibility()}
 
 function renderVisualSnapshot(){
- const copy=lang==="fr"?{title:"La mer, en direct",caption:"Conditions actuelles de la localité",wind:"Vent actuel",wave:"Température de la mer",moon:"Phase lunaire",illum:"Éclairage",foot:"Valeurs horaires des sources connectées. Les données absentes restent indisponibles.",day:"EN DIRECT",temp:"Température de l’air",gust:"Rafale actuelle",pressure:"Pression atmosphérique",weather:"Conditions"}:lang==="ar"?{title:"البحر مباشرة",caption:"الظروف الحالية في المنطقة المختارة",wind:"الرياح الحالية",wave:"حرارة البحر",moon:"طور القمر",illum:"الإضاءة",foot:"بيانات فعلية من المصادر المتصلة. لا يتم عرض القيم غير المتاحة.",day:"مباشر",temp:"حرارة الهواء",gust:"هبة الرياح",pressure:"الضغط الجوي",weather:"الحالة"}:lang==="en"?{title:"Live sea conditions",caption:"Current conditions for the selected location",wind:"Current wind",wave:"Sea temperature",moon:"Moon phase",illum:"Illumination",foot:"Hourly values from connected sources. Missing data is never estimated.",day:"LIVE",temp:"Air temperature",gust:"Current gust",pressure:"Atmospheric pressure",weather:"Conditions"}:{title:"El mar, en directo",caption:"Condiciones actuales de la localidad",wind:"Viento actual",wave:"Temperatura del mar",moon:"Fase lunar",illum:"Iluminación",foot:"Valores horarios de las fuentes conectadas. Los datos ausentes no se inventan.",day:"EN DIRECTO",temp:"Temperatura del aire",gust:"Racha actual",pressure:"Presión atmosférica",weather:"Estado"};
+ const copy=lang==="fr"?{title:"La mer, en direct",caption:"Conditions actuelles de la localité",wind:"Vent actuel",moon:"Phase lunaire",illum:"Éclairage",foot:"Valeurs horaires des sources connectées. Les données absentes restent indisponibles.",day:"EN DIRECT",temp:"Température de l’air",gust:"Rafale actuelle",pressure:"Pression atmosphérique",weather:"Conditions",sst:"Température de la mer"}:lang==="ar"?{title:"البحر مباشرة",caption:"الظروف الحالية في المنطقة المختارة",wind:"الرياح الحالية",moon:"طور القمر",illum:"الإضاءة",foot:"بيانات فعلية من المصادر المتصلة. لا يتم عرض القيم غير المتاحة.",day:"مباشر",temp:"حرارة الهواء",gust:"هبة الرياح",pressure:"الضغط الجوي",weather:"الحالة",sst:"حرارة البحر"}:lang==="en"?{title:"Live sea conditions",caption:"Current conditions for the selected location",wind:"Current wind",moon:"Moon phase",illum:"Illumination",foot:"Hourly values from connected sources. Missing data is never estimated.",day:"LIVE",temp:"Air temperature",gust:"Current gust",pressure:"Atmospheric pressure",weather:"Conditions",sst:"Sea temperature"}:{title:"El mar, en directo",caption:"Condiciones actuales de la localidad",wind:"Viento actual",moon:"Fase lunar",illum:"Iluminación",foot:"Valores horarios de las fuentes conectadas. Los datos ausentes no se inventan.",day:"EN DIRECTO",temp:"Temperatura del aire",gust:"Racha actual",pressure:"Presión atmosférica",weather:"Estado",sst:"Temperatura del mar"};
  const loc=LOCATIONS[$("location").value]?.name||"";
- $("visualTitle").textContent=copy.title;$("visualCaption").textContent=(loc?loc+" · ":"")+copy.caption;$("visualWindLabel").textContent=copy.wind;$("visualWaveLabel").textContent=copy.wave;$("visualMoonLabel").textContent=copy.moon;$("visualFoot").textContent=copy.foot;$("visualDayBadge").textContent=copy.day;
- $("liveTempLabel").textContent=copy.temp;$("liveGustLabel").textContent=copy.gust;$("livePressureLabel").textContent=copy.pressure;
- const cur=forecast?.current||{}, no=tr("noData");
- const val=(...keys)=>{for(const k of keys){const n=num(cur[k]);if(n!==null)return n;}return null;};
+ $("visualTitle").textContent=copy.title;$("visualCaption").textContent=(loc?loc+" · ":"")+copy.caption;$("visualWindLabel").textContent=copy.wind;$("visualMoonLabel").textContent=copy.moon;$("visualFoot").textContent=copy.foot;$("visualDayBadge").textContent=copy.day;
+ $("liveTempLabel").textContent=copy.temp;$("liveGustLabel").textContent=copy.gust;$("livePressureLabel").textContent=copy.pressure;$("liveSeaTempLabel").textContent=copy.sst;
+ const no=tr("noData"),offset=(forecast?.utcOffsetSeconds??3600)*1000;
+ const nowLocal=new Date(Date.now()+offset),today=nowLocal.toISOString().slice(0,10);
+ const localHour=nowLocal.getUTCHours(),localMinute=nowLocal.getUTCMinutes();
+ const todays=(forecast?.hours||[]).filter(h=>dateOnly(h.time)===today);
+ let currentHour=null,best=Infinity;
+ todays.forEach(h=>{const m=String(h.time).match(/T(\d{2}):(\d{2})/);if(!m)return;const d=Math.abs((+m[1]*60 + +m[2])-(localHour*60+localMinute));if(d<best){best=d;currentHour=h;}});
+ const cur=forecast?.current||{},h=currentHour||{};
+ const val=(...keys)=>{for(const k of keys){const n=num(cur[k]??h[k]);if(n!==null)return n;}return null;};
  const air=val("temperature_2m","temp","temperature","temp_c");
  const wind=val("wind_speed_10m","windspeed","wind_speed","wind");
- const gust=val("wind_gusts_10m","windgust","wind_gust");
+ const gust=val("wind_gusts_10m","windgust","wind_gust","gust");
  const pressure=val("pressure_msl","pressure_msl_hpa","pressure","sealevelpressure");
- const code=cur.weather_code??cur.weathercode??cur.icon??cur.conditions;
+ const code=cur.weather_code??cur.weathercode??cur.icon??cur.conditions??h.code;
+ const rain=cur.precipitation??cur.precip??h.rain,cloud=cur.cloud_cover??cur.cloudcover??h.cloud;
  $("visualAirTemp").textContent=air===null?no:fmt(air,1)+" °C";
  $("visualWind").textContent=wind===null?no:fmt(wind,1)+" km/h";
  $("visualGust").textContent=gust===null?no:fmt(gust,1)+" km/h";
- $("visualSeaTemp").textContent=window.sstPayload?.temperature==null?no:fmt(window.sstPayload.temperature,1)+" °C";
+ const sst=num(window.sstPayload?.temperature);
+ $("visualSeaTemp").textContent=sst===null?no:fmt(sst,1)+" °C";
+ $("liveSeaTempNote").textContent=window.sstPayload?.date||window.sstPayload?.source||"SST";
  $("visualPressure").textContent=pressure===null?no:fmt(pressure,1)+" hPa";
- $("visualWeather").textContent=copy.weather+": "+(code==null?no:weatherIcon(code));
- $("liveSeaTempNote").textContent=window.sstPayload?.date||"SST";
+ $("liveWeather").textContent=copy.weather+": "+(code==null?no:weatherIcon(code,rain,cloud));
  const moon=$("moonValue").textContent,illum=$("illumValue").textContent;
  $("visualMoon").textContent=moon&&moon!=="—"?moon:no;
  $("visualIllum").textContent=(lang==="fr"?"Éclairage : ":lang==="ar"?"الإضاءة: ":lang==="en"?"Illumination: ":"Iluminación: ")+(illum&&illum!=="—"?illum:no);
- const phase=String(moon||"").toLowerCase();let icon="🌙";
+ let icon="🌙";const phase=String(moon||"").toLowerCase();
  if(/new|nueva|nouvelle|محاق/.test(phase))icon="🌑";else if(/full|llena|pleine|بدر/.test(phase))icon="🌕";else if(/first quarter|cuarto creciente|premier quartier|التربيع الأول/.test(phase))icon="🌓";else if(/last quarter|cuarto menguante|dernier quartier|التربيع الأخير/.test(phase))icon="🌗";else if(/wax|creciente|croissant|متزايد/.test(phase))icon="🌔";else if(/wan|menguante|décroissant|متناقص/.test(phase))icon="🌖";
  $("visualMoonIcon").textContent=icon;
 }
-
 function normalizeSST(raw){const p=raw?.data??raw;return {temperature:num(p?.temperature_c??p?.temperature??p?.sst),date:p?.date??p?.fecha??null,source:p?.source??p?.fuente??""};}
 async function load({silent=false}={}){
  const locationId=$("location").value,loc=LOCATIONS[locationId];
