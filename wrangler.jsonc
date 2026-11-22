@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mar-y-pesca",
+  "compatibility_date": "2026-11-22",
+  "assets": {
+    "directory": "."
+  },
+  "previews": {}
+}
