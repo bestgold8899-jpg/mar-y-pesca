@@ -498,10 +498,11 @@ function moonPhaseLabel(value){
  const id=phases[key]; if(!id) return raw;
  const labels={
   es:{new:"Luna nueva",waxingCrescent:"Luna creciente",firstQuarter:"Cuarto creciente",waxingGibbous:"Gibosa creciente",full:"Luna llena",waningGibbous:"Gibosa menguante",lastQuarter:"Cuarto menguante",waningCrescent:"Luna menguante"},
+  en:{new:"New moon",waxingCrescent:"Waxing crescent",firstQuarter:"First quarter",waxingGibbous:"Waxing gibbous",full:"Full moon",waningGibbous:"Waning gibbous",lastQuarter:"Last quarter",waningCrescent:"Waning crescent"},
   fr:{new:"Nouvelle lune",waxingCrescent:"Premier croissant",firstQuarter:"Premier quartier",waxingGibbous:"Gibbeuse croissante",full:"Pleine lune",waningGibbous:"Gibbeuse décroissante",lastQuarter:"Dernier quartier",waningCrescent:"Dernier croissant"},
   ar:{new:"المحاق",waxingCrescent:"هلال متزايد",firstQuarter:"التربيع الأول",waxingGibbous:"أحدب متزايد",full:"البدر",waningGibbous:"أحدب متناقص",lastQuarter:"التربيع الأخير",waningCrescent:"هلال متناقص"}
  };
- return labels[lang][id];
+ return labels[lang]?.[id]||labels.es[id]||raw;
 }
 function renderTides(){
  if(!tidePayload){$("tideCurrentPanel").hidden=true;["stationName","nextHigh","nextLow","moonValue","illumValue"].forEach(id=>$(id).textContent=tr("noData"));$("monthRows").innerHTML=`<tr><td colspan="4" class="empty">${tr("noData")}</td></tr>`;renderDailyTideChart([]);return}
@@ -771,7 +772,7 @@ async function load({silent=false}={}){
   if(results[3].status==="fulfilled")window.sstPayload=normalizeSST(results[3].value);
   else if(locationChanged)window.sstPayload=null;
   if(!selectedDate||!(forecast?.days||[]).some(d=>d.date===selectedDate))selectedDate=forecast?.days?.[0]?.date||new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Casablanca",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
-  renderAll();
+  try{renderAll();}catch(renderError){console.error("Mar & Pesca display error:",renderError);}
   const success=results.filter(r=>r.status==="fulfilled").length;
   if(success>0)lastSuccessfulLoad=Date.now();
   const locale=lang==="ar"?"ar-MA":lang==="fr"?"fr-FR":lang==="en"?"en-GB":"es-ES";
@@ -817,7 +818,7 @@ function applyLanguage(){
  const kickers=document.querySelectorAll(".tool-kicker");if(kickers[0])setTextPreservingChildren(kickers[0],mapText("kickerPlan"));if(kickers[1])setTextPreservingChildren(kickers[1],mapText("kickerMap"));
  const legend=document.querySelectorAll(".map-legend span");[mapText("mapGood"),mapText("mapFair"),mapText("mapBad"),mapText("mapNone")].forEach((value,i)=>{if(legend[i])setTextPreservingChildren(legend[i],value);});
  document.querySelectorAll("[data-es]").forEach(el=>setTextPreservingChildren(el,el.dataset[lang]||el.dataset.es));
- renderAll();
+ try{renderAll();}catch(renderError){console.error("Mar & Pesca language render error:",renderError);}
 }
 $("mapRefresh").addEventListener("click",loadFishingMap);
 $("language").addEventListener("change",e=>{lang=e.target.value;try{localStorage.setItem("marpesca-guide-lang",lang)}catch(error){}applyLanguage()});
