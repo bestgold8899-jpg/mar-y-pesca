@@ -803,8 +803,9 @@ async function load({silent=false}={}){
 function applyLanguage(){
  const t=I18N[lang];document.documentElement.lang=lang;document.documentElement.dir=lang==="ar"?"rtl":"ltr";
  const map={tagline:"tag",forecastTitle:"forecast",conditionsTitle:"conditions",tempLabel:"temp",windMinLabel:"windMin",windMaxLabel:"windMax",gustMinLabel:"gustMin",gustMaxLabel:"gustMax",waveLabel:"wave",rainDayLabel:"rainDay",seaTempLabel:"seaTemp",pressureLabel:"pressure",pressureHourHead:"pressureHour",hourlyTitle:"hourly",windHint:"hint",hourHead:"hour",weatherHead:"weather",rainHead:"rain",windHead:"wind",gustHead:"gustHourly",dirHead:"direction",waveHead:"wave",wavePeriodHead:"wavePeriod",waveDirectionHead:"waveDirection",tidesTitle:"tides",stationName:"station",tideNote:"tideNote",nextHighLabel:"high",nextLowLabel:"low",moonLabel:"moon",illumLabel:"illum",tideCurveTitle:"curve",tideCurveSub:"curveSub",moonCalendarTitle:"moonCal",moonCalendarSub:"moonSub",activityTitle:"activity",activityLabel:"noScore",activityExplain:"explain",monthTableTitle:"month",dateHead:"date",highHead:"highs",lowHead:"lows",moonHead:"moon",sourceTitle:"sources",seoTitle:"seoTitle",seoIntro:"seoIntro",seoSubTitle:"seoSubTitle",seoDetails:"seoDetails",faqTitle:"faqTitle",faqQ1:"faqQ1",faqA1:"faqA1",faqQ2:"faqQ2",faqA2:"faqA2",faqQ3:"faqQ3",faqA3:"faqA3"};
- Object.entries(map).forEach(([id,key])=>$(id).textContent=t[key]);
- document.querySelectorAll("[data-es]").forEach(el=>{el.textContent=el.dataset[lang]||el.dataset.es;});
+ const setTextPreservingChildren=(el,value)=>{const nodes=[...el.childNodes].filter(n=>n.nodeType===Node.TEXT_NODE);if(el.children.length===0)el.textContent=value;else if(nodes.length===1)nodes[0].nodeValue=value;};
+ Object.entries(map).forEach(([id,key])=>{const el=$(id);if(el)setTextPreservingChildren(el,t[key]);});
+ document.querySelectorAll("[data-es]").forEach(el=>setTextPreservingChildren(el,el.dataset[lang]||el.dataset.es));
  renderAll();
 }
 $("mapRefresh").addEventListener("click",loadFishingMap);
