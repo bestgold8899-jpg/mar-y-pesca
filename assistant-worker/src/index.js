@@ -21,10 +21,17 @@ function corsHeaders(request, env) {
   const origin = request.headers.get("Origin") || "";
   const configured = (env.ALLOWED_ORIGIN || "https://mar-y-pesca.bestgold8899.workers.dev")
     .split(",").map((value) => value.trim()).filter(Boolean);
-  const allowed = configured.includes(origin) ||
-    origin === "http://localhost:3000" || origin === "http://127.0.0.1:5500";
+  // Hoppscotch is explicitly allowed for testing the public chat endpoint.
+  // Keep the production website origin controlled by ALLOWED_ORIGIN.
+  const allowedOrigins = new Set([
+    ...configured,
+    "https://hoppscotch.io",
+    "http://localhost:3000",
+    "http://127.0.0.1:5500"
+  ]);
+  const allowed = allowedOrigins.has(origin);
   return {
-    "Access-Control-Allow-Origin": allowed ? origin : configured[0],
+    ...(allowed ? { "Access-Control-Allow-Origin": origin } : {}),
     "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
     "Access-Control-Allow-Headers": "Content-Type",
     "Vary": "Origin"
