@@ -753,7 +753,7 @@ function buildAssistantFishingContext(){
  const hourly=(forecast?.hours||[]).filter(h=>dateOnly(h.time)===date).map(h=>({
   time:h.time,temp:h.temp,rain:h.rain,wind:h.wind,windDirection:h.dir,gust:h.gust,
   weatherCode:h.code,cloud:h.cloud,pressure:h.pressure,
-  wave:(waveForHour(h.time)?{height:waveForHour(h.time).height,period:waveForHour(h.time).period,direction:waveForHour(h.time).direction}:null
+  wave:(waveForHour(h.time)?{height:waveForHour(h.time).height,period:waveForHour(h.time).period,direction:waveForHour(h.time).direction}:null)
  }));
  const waves=wavesForDate(date).map(w=>({time:w.time,height:w.height,period:w.period,direction:w.direction}));
  const extremes=(tidePayload?.extremes||[]).filter(e=>dateOnly(e.localDate||e.localTime||e.time)===date).map(e=>({
