@@ -439,7 +439,7 @@ function renderDays(){
  if(!days.length){host.innerHTML=`<div class="empty">${tr("noData")}</div>`;return}
  days.forEach(d=>{
   const el=document.createElement("div");el.className="day"+(d.date===selectedDate?" active":"");
-  el.innerHTML=`<strong>${new Date(d.date+"T12:00:00").toLocaleDateString(lang==="ar"?"ar-MA":lang==="fr"?"fr-FR":"es-ES",{weekday:"short"})}</strong><small>${d.date}</small><span class="icon">${weatherIcon(d.code,d.rain,d.cloud)}</span><b>${d.tmin==null&&d.tmax==null?tr("noData"):`${fmt(d.tmin)}° / ${fmt(d.tmax)}°`}</b><small>${d.wind==null?tr("noData"):`${fmt(d.wind)} km/h`}</small><small>${d.rain==null?tr("noData"):`${fmt(d.rain,1)} mm`}</small>`;
+  el.innerHTML=`<strong>${new Date(d.date+"T12:00:00").toLocaleDateString(lang==="ar"?"ar-MA":lang==="fr"?"fr-FR":lang==="en"?"en-US":"es-ES",{weekday:"short"})}</strong><small>${d.date}</small><span class="icon">${weatherIcon(d.code,d.rain,d.cloud)}</span><b>${d.tmin==null&&d.tmax==null?tr("noData"):`${fmt(d.tmin)}° / ${fmt(d.tmax)}°`}</b><small>${d.wind==null?tr("noData"):`${fmt(d.wind)} km/h`}</small><small>${d.rain==null?tr("noData"):`${fmt(d.rain,1)} mm`}</small>`;
   el.onclick=()=>{selectedDate=d.date;renderAll()};host.appendChild(el);
  });
 }
@@ -563,7 +563,7 @@ function renderDailyTideChart(extremes){
  const c=lang==="en"?{title:"Tide over the next 24 hours",sub:"Water level and high- and low-tide times",high:"High tide",low:"Low tide",foot:"Interpolated curve between the actual high and low extremes supplied by the station; these are not hourly measurements.",no:"Data unavailable",height:"Height (m)"}:lang==="fr"?{title:"Évolution de la marée · 24 h",sub:"Hauteur de l’eau et heures de pleine et basse mer",high:"Pleine mer",low:"Basse mer",foot:"Courbe interpolée entre les extrêmes réels fournis par la station ; ce ne sont pas des mesures horaires.",no:"Données indisponibles",height:"Hauteur (m)"}:lang==="ar"?{title:"تغير المد والجزر · ٢٤ ساعة",sub:"ارتفاع المياه وأوقات المد والجزر",high:"المد",low:"الجزر",foot:"منحنى تقريبي بين القيم القصوى الفعلية التي توفرها المحطة، وليس قياسات كل ساعة.",no:"البيانات غير متاحة",height:"الارتفاع (م)"}:{title:"Evolución de la marea · 24 horas",sub:"Altura del agua y horas de pleamar y bajamar",high:"Pleamar",low:"Bajamar",foot:"Curva interpolada entre los extremos reales facilitados por la estación; no representa mediciones horarias.",no:"Datos no disponibles",height:"Altura (m)"};
  $("tideDayTitle").textContent=c.title;$("tideDaySub").textContent=c.sub;$("tideHighLegend").textContent=c.high;$("tideLowLegend").textContent=c.low;$("tideDayFoot").textContent=c.foot;
  const date=selectedDate||"";
- $("tideDayDate").textContent=date?new Date(date+"T12:00:00").toLocaleDateString(lang==="ar"?"ar-MA":lang==="fr"?"fr-FR":"es-ES",{weekday:"short",day:"numeric",month:"short"}):"—";
+ $("tideDayDate").textContent=date?new Date(date+"T12:00:00").toLocaleDateString(lang==="ar"?"ar-MA":lang==="fr"?"fr-FR":lang==="en"?"en-US":"es-ES",{weekday:"short",day:"numeric",month:"short"}):"—";
  const fail=()=>{svg.innerHTML='<text x="380" y="160" text-anchor="middle" fill="#a0aec0" font-size="16">'+c.no+'</text>';};
  if(!date||!Array.isArray(extremes)){fail();return}
  const events=extremes.map(e=>{
@@ -689,7 +689,7 @@ function renderBestFishingTime(){
 let fishingLeafletMap=null,fishingMapLayer=null;
 function renderFishingMap(points){
  const list=$("mapLocalityList"),entries=Object.entries(LOCATIONS);
- if(!window.L){$("mapStatus").textContent="No se pudo cargar el mapa cartográfico. Comprueba tu conexión.";return;}
+ if(!window.L){$("mapStatus").textContent=mapText("mapNoLeaflet");return;}
  if(!fishingLeafletMap){
   fishingLeafletMap=L.map("fishingMap",{scrollWheelZoom:false,zoomControl:true,minZoom:4,maxZoom:11});
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'}).addTo(fishingLeafletMap);
@@ -713,10 +713,10 @@ function renderFishingMap(points){
 }
 let mapLoading=false;
 async function loadFishingMap(){
- if(mapLoading)return;mapLoading=true;$("mapRefresh").disabled=true;$("mapStatus").textContent="Consultando previsiones…";
+ if(mapLoading)return;mapLoading=true;$("mapRefresh").disabled=true;$("mapStatus").textContent=mapText("mapLoading");
  const entries=Object.entries(LOCATIONS),results={};let done=0;
- for(let i=0;i<entries.length;i+=4){await Promise.all(entries.slice(i,i+4).map(async([id,l])=>{try{const urls=[API_BASE+"/api/forecast?location="+encodeURIComponent(id)+"&lat="+l.lat+"&lng="+l.lng+"&days=2",API_BASE+"/api/oleaje?location="+encodeURIComponent(id)];const pair=await Promise.allSettled(urls.map(getJson));if(pair[0].status!=="fulfilled")throw Error("forecast unavailable");const n=normalizeForecast(pair[0].value),d=n.days[0],waves=pair[1].status==="fulfilled"?normalizeWaves(pair[1].value).records:[],dayWave=waves.filter(w=>{const ms=Date.parse(w.time);return Number.isFinite(ms)&&new Date(ms+3600000).toISOString().slice(0,10)===d?.date;}),wave=dayWave.length?Math.max(...dayWave.map(w=>w.height)):null;results[id]={wind:num(d?.wind),wave};}catch(e){results[id]=null;}done++;$("mapStatus").textContent=done+" / "+entries.length+" localidades consultadas";}));}
- renderFishingMap(results);const count=Object.values(results).filter(v=>v&&v.wind!==null&&v.wave!==null).length;$("mapStatus").textContent=count+" / "+entries.length+" localidades con datos de viento y oleaje. Pulsa un punto para abrir su previsión completa.";$("mapRefresh").disabled=false;mapLoading=false;
+ for(let i=0;i<entries.length;i+=4){await Promise.all(entries.slice(i,i+4).map(async([id,l])=>{try{const urls=[API_BASE+"/api/forecast?location="+encodeURIComponent(id)+"&lat="+l.lat+"&lng="+l.lng+"&days=2",API_BASE+"/api/oleaje?location="+encodeURIComponent(id)];const pair=await Promise.allSettled(urls.map(getJson));if(pair[0].status!=="fulfilled")throw Error("forecast unavailable");const n=normalizeForecast(pair[0].value),d=n.days[0],waves=pair[1].status==="fulfilled"?normalizeWaves(pair[1].value).records:[],dayWave=waves.filter(w=>{const ms=Date.parse(w.time);return Number.isFinite(ms)&&new Date(ms+3600000).toISOString().slice(0,10)===d?.date;}),wave=dayWave.length?Math.max(...dayWave.map(w=>w.height)):null;results[id]={wind:num(d?.wind),wave};}catch(e){results[id]=null;}done++;$("mapStatus").textContent=done+" / "+entries.length+" "+mapText("mapProgress");}));}
+ renderFishingMap(results);const count=Object.values(results).filter(v=>v&&v.wind!==null&&v.wave!==null).length;$("mapStatus").textContent=count+" / "+entries.length+" "+mapText("mapComplete");$("mapRefresh").disabled=false;mapLoading=false;
 }
 
 function isMoroccoToday(date){
@@ -800,11 +800,22 @@ async function load({silent=false}={}){
   if(sequence===loadSequence)refreshInFlight=false;
  }
 }
+const MAP_I18N={
+ es:{kickerPlan:"MAR & PESCA · PLANIFICA TU SALIDA",kickerMap:"MARRUECOS · COSTA ATLÁNTICA Y MEDITERRÁNEA",mapGood:"Buenas condiciones",mapFair:"Intermedias",mapBad:"Adversas",mapNone:"Sin datos",mapLoading:"Consultando previsiones…",mapNoLeaflet:"No se pudo cargar el mapa cartográfico. Comprueba tu conexión.",mapProgress:"localidades consultadas",mapComplete:"localidades con datos de viento y oleaje. Pulsa un punto para abrir su previsión completa.",mapButton:"Actualizar mapa de condiciones"},
+ en:{kickerPlan:"MAR & PESCA · PLAN YOUR TRIP",kickerMap:"MOROCCO · ATLANTIC AND MEDITERRANEAN COAST",mapGood:"Good conditions",mapFair:"Moderate",mapBad:"Unfavourable",mapNone:"No data",mapLoading:"Checking forecasts…",mapNoLeaflet:"The map could not be loaded. Please check your connection.",mapProgress:"locations checked",mapComplete:"locations with wind and wave data. Select a point to open its full forecast.",mapButton:"Refresh conditions map"},
+ fr:{kickerPlan:"MAR & PESCA · PRÉPAREZ VOTRE SORTIE",kickerMap:"MAROC · CÔTES ATLANTIQUE ET MÉDITERRANÉENNE",mapGood:"Bonnes conditions",mapFair:"Intermédiaires",mapBad:"Défavorables",mapNone:"Aucune donnée",mapLoading:"Consultation des prévisions…",mapNoLeaflet:"La carte n’a pas pu être chargée. Vérifiez votre connexion.",mapProgress:"localités consultées",mapComplete:"localités avec des données de vent et de houle. Sélectionnez un point pour ouvrir les prévisions.",mapButton:"Actualiser la carte des conditions"},
+ ar:{kickerPlan:"MAR & PESCA · خطط لرحلتك",kickerMap:"المغرب · الساحل الأطلسي والمتوسطي",mapGood:"ظروف جيدة",mapFair:"متوسطة",mapBad:"غير ملائمة",mapNone:"لا توجد بيانات",mapLoading:"جارٍ فحص التوقعات…",mapNoLeaflet:"تعذر تحميل الخريطة. تحقق من اتصالك بالإنترنت.",mapProgress:"من المناطق تم فحصها",mapComplete:"من المناطق تتوفر لها بيانات الرياح والأمواج. اختر نقطة لفتح التوقعات الكاملة.",mapButton:"تحديث خريطة الظروف"}
+};
+function mapText(key){return MAP_I18N[lang]?.[key]||MAP_I18N.es[key]||key}
 function applyLanguage(){
  const t=I18N[lang];document.documentElement.lang=lang;document.documentElement.dir=lang==="ar"?"rtl":"ltr";
- const map={tagline:"tag",forecastTitle:"forecast",conditionsTitle:"conditions",tempLabel:"temp",windMinLabel:"windMin",windMaxLabel:"windMax",gustMinLabel:"gustMin",gustMaxLabel:"gustMax",waveLabel:"wave",rainDayLabel:"rainDay",seaTempLabel:"seaTemp",pressureLabel:"pressure",pressureHourHead:"pressureHour",hourlyTitle:"hourly",windHint:"hint",hourHead:"hour",weatherHead:"weather",rainHead:"rain",windHead:"wind",gustHead:"gustHourly",dirHead:"direction",waveHead:"wave",wavePeriodHead:"wavePeriod",waveDirectionHead:"waveDirection",tidesTitle:"tides",stationName:"station",tideNote:"tideNote",nextHighLabel:"high",nextLowLabel:"low",moonLabel:"moon",illumLabel:"illum",tideCurveTitle:"curve",tideCurveSub:"curveSub",moonCalendarTitle:"moonCal",moonCalendarSub:"moonSub",activityTitle:"activity",activityLabel:"noScore",activityExplain:"explain",monthTableTitle:"month",dateHead:"date",highHead:"highs",lowHead:"lows",moonHead:"moon",sourceTitle:"sources",seoTitle:"seoTitle",seoIntro:"seoIntro",seoSubTitle:"seoSubTitle",seoDetails:"seoDetails",faqTitle:"faqTitle",faqQ1:"faqQ1",faqA1:"faqA1",faqQ2:"faqQ2",faqA2:"faqA2",faqQ3:"faqQ3",faqA3:"faqA3"};
+ const map={tagline:"tag",forecastTitle:"forecast",conditionsTitle:"conditions",tempLabel:"temp",windMinLabel:"windMin",windMaxLabel:"windMax",gustMinLabel:"gustMin",gustMaxLabel:"gustMax",waveLabel:"wave",rainDayLabel:"rainDay",seaTempLabel:"seaTemp",pressureLabel:"pressure",pressureHourHead:"pressureHour",hourlyTitle:"hourly",windHint:"hint",hourHead:"hour",weatherHead:"weather",rainHead:"rain",windHead:"wind",gustHead:"gustHourly",dirHead:"direction",waveHead:"wave",wavePeriodHead:"wavePeriod",waveDirectionHead:"waveDirection",tidesTitle:"tides",stationName:"station",tideNote:"tideNote",nextHighLabel:"high",nextLowLabel:"low",moonLabel:"moon",illumLabel:"illum",tideCurveTitle:"curve",tideCurveSub:"curveSub",moonCalendarTitle:"moonCal",moonCalendarSub:"moonSub",activityTitle:"activity",activityLabel:"noScore",activityExplain:"explain",monthTableTitle:"month",dateHead:"date",highHead:"highs",lowHead:"lows",moonHead:"moon",sourceTitle:"sources",seoTitle:"seoTitle",seoIntro:"seoIntro",seoSubTitle:"seoSubTitle",seoDetails:"seoDetails",faqTitle:"faqTitle",faqQ1:"faqQ1",faqA1:"faqA1",faqQ2:"faqQ2",faqA2:"faqA2",faqQ3:"faqQ3",faqA3:"faqA3",mapTitle:"mapTitle",mapSub:"mapSub"};
  const setTextPreservingChildren=(el,value)=>{const nodes=[...el.childNodes].filter(n=>n.nodeType===Node.TEXT_NODE);if(nodes.length){nodes[0].nodeValue=value;for(let i=1;i<nodes.length;i++)nodes[i].nodeValue="";}else el.insertBefore(document.createTextNode(value),el.firstChild);};
  Object.entries(map).forEach(([id,key])=>{const el=$(id);if(el)setTextPreservingChildren(el,t[key]);});
+ const ui={visualKicker:mapText("kickerPlan"),mapRefresh:mapText("mapButton")};
+ Object.entries(ui).forEach(([id,value])=>{const el=$(id);if(el)setTextPreservingChildren(el,value);});
+ const kickers=document.querySelectorAll(".tool-kicker");if(kickers[0])setTextPreservingChildren(kickers[0],mapText("kickerPlan"));if(kickers[1])setTextPreservingChildren(kickers[1],mapText("kickerMap"));
+ const legend=document.querySelectorAll(".map-legend span");[mapText("mapGood"),mapText("mapFair"),mapText("mapBad"),mapText("mapNone")].forEach((value,i)=>{if(legend[i])setTextPreservingChildren(legend[i],value);});
  document.querySelectorAll("[data-es]").forEach(el=>setTextPreservingChildren(el,el.dataset[lang]||el.dataset.es));
  renderAll();
 }
