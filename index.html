@@ -850,6 +850,7 @@ function applyLanguage(){
  const legend=document.querySelectorAll(".map-legend span");[mapText("mapGood"),mapText("mapFair"),mapText("mapBad"),mapText("mapNone")].forEach((value,i)=>{if(legend[i])setTextPreservingChildren(legend[i],value);});
  document.querySelectorAll("[data-es]").forEach(el=>setTextPreservingChildren(el,el.dataset[lang]||el.dataset.es));
  try{renderAll();}catch(renderError){console.error("Mar & Pesca language render error:",renderError);}
+ if(typeof assistantApplyLanguage==="function")assistantApplyLanguage();
 }
 
 /* Chat IA conectado al Worker independiente mar-pesca-assistant */
@@ -922,8 +923,7 @@ function assistantOpen(open){
 $("assistantLaunch").addEventListener("click",()=>assistantOpen($("assistantPanel").hidden));
 $("assistantClose").addEventListener("click",()=>assistantOpen(false));
 $("assistantForm").addEventListener("submit",assistantSubmit);
-$("language").addEventListener("change",()=>{assistantApplyLanguage();});
-assistantApplyLanguage();
+/* La traducción se aplica desde applyLanguage() después de actualizar lang. */
 
 $("mapRefresh").addEventListener("click",loadFishingMap);
 $("language").addEventListener("change",e=>{lang=e.target.value;try{localStorage.setItem("marpesca-guide-lang",lang)}catch(error){}applyLanguage()});
