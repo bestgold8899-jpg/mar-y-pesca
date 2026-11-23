@@ -146,6 +146,11 @@ footer{text-align:center;border-top:1px solid var(--border);padding:16px 8px;col
 @media(max-width:760px){.guides-grid{grid-template-columns:1fr}.guide-card{display:grid;grid-template-columns:112px minmax(0,1fr)}.guide-art{height:100%;min-height:150px}.guide-body{padding:11px}}
 @media(max-width:420px){.guide-card{grid-template-columns:88px minmax(0,1fr)}.guide-art{min-height:160px}.guide-body h3{font-size:14px}}
 
+
+/* Mar & Pesca AI chat */
+#mp-ai-launcher{position:fixed;right:18px;bottom:18px;z-index:1000;border:0;border-radius:999px;padding:13px 17px;background:linear-gradient(135deg,#0891b2,#2563eb);color:white;font-weight:800;box-shadow:0 8px 28px #0006;cursor:pointer}
+#mp-ai-panel{position:fixed;right:16px;bottom:76px;z-index:1001;width:min(380px,calc(100vw - 24px));height:min(560px,calc(100dvh - 100px));background:#0b1422;border:1px solid #24506d;border-radius:18px;box-shadow:0 18px 60px #0009;display:none;overflow:hidden;color:#e6f4ff}
+#mp-ai-panel.open{display:flex;flex-direction:column}#mp-ai-head{padding:14px;background:#10263a;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #21445d}#mp-ai-head strong{font-size:15px}#mp-ai-head small{display:block;color:#91b9d1;font-size:11px;margin-top:3px}#mp-ai-close{border:0;background:transparent;color:#d8efff;font-size:22px;cursor:pointer}#mp-ai-messages{flex:1;overflow:auto;padding:12px;display:flex;flex-direction:column;gap:10px}#mp-ai-messages .mp-ai-msg{max-width:90%;white-space:pre-wrap;overflow-wrap:anywhere;padding:10px 12px;border-radius:13px;font-size:13px;line-height:1.5}#mp-ai-messages .user{align-self:flex-end;background:#075985;color:#fff;border-bottom-right-radius:4px}#mp-ai-messages .assistant{align-self:flex-start;background:#172b3d;color:#e5f4ff;border-bottom-left-radius:4px}#mp-ai-messages .system{align-self:center;color:#9ab9ce;font-size:11px;text-align:center}#mp-ai-form{display:flex;gap:8px;padding:10px;border-top:1px solid #23435a;background:#0e1c2b}#mp-ai-input{flex:1;min-width:0;resize:none;border-radius:11px;border:1px solid #34566c;background:#122638;color:#f0f8ff;padding:10px;font:inherit;font-size:13px;max-height:100px}#mp-ai-send{border:0;border-radius:10px;background:#0891b2;color:#fff;font-weight:800;padding:0 14px;cursor:pointer}#mp-ai-send:disabled{opacity:.5;cursor:default}#mp-ai-panel[dir=rtl] #mp-ai-form{flex-direction:row-reverse}@media(max-width:480px){#mp-ai-launcher{right:12px;bottom:12px;padding:12px 15px}#mp-ai-panel{right:8px;bottom:68px;width:calc(100vw - 16px);height:min(570px,calc(100dvh - 86px))}}
 </style>
 </head>
 <body>
@@ -855,6 +860,27 @@ setInterval(()=>{if(!document.hidden)load({silent:true});},AUTO_REFRESH_MS);
 document.addEventListener("visibilitychange",()=>{
  if(!document.hidden&&Date.now()-lastSuccessfulLoad>=AUTO_REFRESH_MS)load({silent:true});
 });
+
+// AI chat UI. Uses page context already loaded; does not fetch forecast APIs again.
+(function(){
+ const endpoint="https://mar-pesca-assistant.bestgold8899.workers.dev/api/chat";
+ const panel=document.getElementById("mp-ai-panel"),launcher=document.getElementById("mp-ai-launcher"),close=document.getElementById("mp-ai-close"),messages=document.getElementById("mp-ai-messages"),form=document.getElementById("mp-ai-form"),input=document.getElementById("mp-ai-input"),send=document.getElementById("mp-ai-send");
+ const copy={es:{subtitle:"Consejos de pesca con datos marítimos",placeholder:"Pregunta sobre las condiciones de pesca…",send:"Enviar",welcome:"¡Hola! Puedo ayudarte a valorar las condiciones de pesca usando los datos disponibles en Mar & Pesca.",loading:"Pensando…",error:"No pude conectar con el asistente. Inténtalo de nuevo más tarde."},fr:{subtitle:"Conseils de pêche basés sur les données marines",placeholder:"Posez une question sur les conditions…",send:"Envoyer",welcome:"Bonjour ! Je peux vous aider à évaluer les conditions de pêche à partir des données de Mar & Pesca.",loading:"Réflexion…",error:"Impossible de joindre l’assistant. Réessayez plus tard."},en:{subtitle:"Fishing advice using marine data",placeholder:"Ask about fishing conditions…",send:"Send",welcome:"Hi! I can help assess fishing conditions using the available Mar & Pesca data.",loading:"Thinking…",error:"Couldn't connect to the assistant. Please try again later."},ar:{subtitle:"نصائح الصيد اعتماداً على بيانات البحر",placeholder:"اسأل عن ظروف الصيد…",send:"إرسال",welcome:"مرحباً! يمكنني مساعدتك في تقييم ظروف الصيد باستخدام البيانات المتاحة في Mar & Pesca.",loading:"جارٍ التفكير…",error:"تعذر الاتصال بالمساعد. حاول لاحقاً."}};
+ function ui(){const l=copy[lang]||copy.es;document.getElementById("mp-ai-subtitle").textContent=l.subtitle;input.placeholder=l.placeholder;send.textContent=l.send;panel.dir=lang==="ar"?"rtl":"ltr";launcher.textContent=lang==="ar"?"🤖 Mar & Pesca AI": "🤖 Mar & Pesca AI";}
+ function addMessage(text,role){const d=document.createElement("div");d.className="mp-ai-msg "+role;d.textContent=text;messages.appendChild(d);messages.scrollTop=messages.scrollHeight;}
+ function open(){panel.classList.add("open");launcher.setAttribute("aria-expanded","true");ui();if(!messages.childElementCount)addMessage((copy[lang]||copy.es).welcome,"assistant");input.focus();}
+ function shut(){panel.classList.remove("open");launcher.setAttribute("aria-expanded","false");}
+ launcher.addEventListener("click",()=>panel.classList.contains("open")?shut():open());close.addEventListener("click",shut);
+ form.addEventListener("submit",async e=>{e.preventDefault();const question=input.value.trim();if(!question||send.disabled)return;addMessage(question,"user");input.value="";send.disabled=true;const l=copy[lang]||copy.es;const waiting=document.createElement("div");waiting.className="mp-ai-msg system";waiting.textContent=l.loading;messages.appendChild(waiting);messages.scrollTop=messages.scrollHeight;
+ try{const locationId=document.getElementById("location")?.value||"";const selected=LOCATIONS[locationId];const context=buildAssistantFishingContext();const res=await fetch(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question,language:lang,location:locationId,date:selectedDate,context})});const data=await res.json();if(!res.ok||!data.answer)throw new Error(data.error||"Bad response");waiting.remove();addMessage(data.answer,"assistant");}
+ catch(err){waiting.remove();addMessage(l.error,"system");}
+ finally{send.disabled=false;input.focus();}
+ });
+ ui();
+})();
 </script>
+
+<button id="mp-ai-launcher" type="button" aria-expanded="false">🤖 Mar &amp; Pesca AI</button>
+<section id="mp-ai-panel" aria-label="Mar & Pesca AI chat"><header id="mp-ai-head"><div><strong>Mar &amp; Pesca AI</strong><small id="mp-ai-subtitle">Consejos de pesca con datos marítimos</small></div><button id="mp-ai-close" type="button" aria-label="Cerrar">×</button></header><div id="mp-ai-messages" aria-live="polite"></div><form id="mp-ai-form"><textarea id="mp-ai-input" rows="1" maxlength="700" placeholder="Pregunta sobre las condiciones de pesca…"></textarea><button id="mp-ai-send" type="submit">Enviar</button></form></section>
 </body>
 </html>
