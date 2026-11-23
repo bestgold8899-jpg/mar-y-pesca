@@ -1,4 +1,4 @@
-const MODEL = "@cf/meta/llama-3.1-8b-instruct-fp8-fast";
+const MODEL = "@cf/meta/llama-3.1-8b-instruct-fast";
 const DEFAULT_CACHE_TTL = 1800;
 const MAX_QUESTION_CHARS = 700;
 const MAX_CONTEXT_CHARS = 12000;
