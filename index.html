@@ -744,6 +744,30 @@ function renderVisualSnapshot(){
  $("visualMoonIcon").textContent=icon;
 }
 
+// Compact normalized context for the future AI assistant. Reuses data already loaded by the page; performs no API calls.
+function buildAssistantFishingContext(){
+ const locationId=$("location")?.value||"";
+ const location=LOCATIONS[locationId]||{};
+ const date=selectedDate||forecast?.days?.[0]?.date||"";
+ const day=forecast?.days?.find(d=>d.date===date)||null;
+ const hourly=(forecast?.hours||[]).filter(h=>dateOnly(h.time)===date).map(h=>({
+  time:h.time,temp:h.temp,rain:h.rain,wind:h.wind,windDirection:h.dir,gust:h.gust,
+  weatherCode:h.code,cloud:h.cloud,pressure:h.pressure,
+  wave:(waveForHour(h.time)?{height:waveForHour(h.time).height,period:waveForHour(h.time).period,direction:waveForHour(h.time).direction}:null)
+ }));
+ const waves=wavesForDate(date).map(w=>({time:w.time,height:w.height,period:w.period,direction:w.direction}));
+ const extremes=(tidePayload?.extremes||[]).filter(e=>dateOnly(e.localDate||e.localTime||e.time)===date).map(e=>({
+  type:tideType(e),time:e.localTime||e.time,height:num(e.height)
+ }));
+ const moon=(tidePayload?.daily||[]).find(d=>dateOnly(d.dateLocal||d.date)===date)||{};
+ const sst=window.sstPayload||{};
+ const compact={location:{id:locationId,name:location.name||locationId},date,weather:day?{
+  minTemperature:day.tmin,maxTemperature:day.tmax,maxWind:day.wind,
+  minGust:day.gustMin,maxGust:day.gustMax??day.gust,rain:day.rain,pressure:day.pressure
+ }:null,hourly,waves,tides:extremes,moon:{phase:moon.moonPhase??null,illumination:moon.moonIllumination??tidePayload?.conditions?.moonIllumination??null},
+ seaTemperature:sst.temperature??null,seaTemperatureDate:sst.date??null};
+ return compact;
+}
 function normalizeSST(raw){const p=raw?.data??raw;return {temperature:num(p?.temperature_c??p?.temperature??p?.sst),date:p?.date??p?.fecha??null,source:p?.source??p?.fuente??""};}
 async function load({silent=false}={}){
  const locationId=$("location").value,loc=LOCATIONS[locationId];
