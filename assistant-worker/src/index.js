@@ -90,7 +90,7 @@ function looksLikeLiveConditionsQuestion(question) {
 
 function extractRequestedDate(question) {
   const q = normalizeQuestion(question);
-  const numeric = q.match(/\b(\d{1,2})[\s/-]+(\d{1,2})[\s/-]+(20\d{2})\b/);
+  const numeric = q.match(/\b(\d{1,2})(?:[\s/-]+|\s+del?\s+)(\d{1,2})(?:[\s/-]+|\s+de\s+)(20\d{2})\b/);
   if (numeric) return numeric[3] + "-" + numeric[2].padStart(2, "0") + "-" + numeric[1].padStart(2, "0");
   const months = {enero:"01",january:"01",janvier:"01",febrero:"02",february:"02",fevrier:"02",marzo:"03",march:"03",mars:"03",abril:"04",april:"04",avril:"04",mayo:"05",may:"05",mai:"05",junio:"06",june:"06",juin:"06",julio:"07",july:"07",juillet:"07",agosto:"08",august:"08",aout:"08",septiembre:"09",setiembre:"09",september:"09",septembre:"09",octubre:"10",october:"10",octobre:"10",noviembre:"11",november:"11",novembre:"11",diciembre:"12",december:"12",decembre:"12"};
   const named = q.match(/\b(\d{1,2})\s+de\s+([a-z]+)\s+(?:de\s+)?(20\d{2})\b/) || q.match(/\b(\d{1,2})\s+([a-z]+)\s+(20\d{2})\b/);
