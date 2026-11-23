@@ -146,6 +146,28 @@ footer{text-align:center;border-top:1px solid var(--border);padding:16px 8px;col
 @media(max-width:760px){.guides-grid{grid-template-columns:1fr}.guide-card{display:grid;grid-template-columns:112px minmax(0,1fr)}.guide-art{height:100%;min-height:150px}.guide-body{padding:11px}}
 @media(max-width:420px){.guide-card{grid-template-columns:88px minmax(0,1fr)}.guide-art{min-height:160px}.guide-body h3{font-size:14px}}
 
+
+/* Asistente IA Mar & Pesca */
+.assistant-launch{position:fixed;right:18px;bottom:18px;z-index:10000;border:1px solid #7dd3fc;background:linear-gradient(135deg,#087db8,#075985);color:#fff;border-radius:999px;padding:13px 17px;font-weight:800;box-shadow:0 8px 28px #0008;cursor:pointer;display:flex;align-items:center;gap:9px}
+.assistant-launch:focus-visible,.assistant-send:focus-visible,.assistant-close:focus-visible{outline:3px solid #fbbf24;outline-offset:3px}
+.assistant-panel{position:fixed;right:16px;bottom:78px;z-index:10001;width:min(390px,calc(100vw - 24px));height:min(560px,calc(100dvh - 105px));display:flex;flex-direction:column;background:#101d35;border:1px solid #38bdf8;border-radius:17px;box-shadow:0 18px 55px #000b;overflow:hidden}
+.assistant-head{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px;background:linear-gradient(120deg,#0b3150,#075985);border-bottom:1px solid #ffffff20}
+.assistant-head strong{display:block;color:#f0f9ff;font-size:14px}.assistant-head small{display:block;color:#bae6fd;font-size:10px;margin-top:3px}
+.assistant-close{border:0;background:#ffffff18;color:#fff;border-radius:8px;width:34px;height:34px;font-size:20px;cursor:pointer}
+.assistant-messages{flex:1;overflow:auto;padding:13px;display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain}
+.assistant-message{max-width:91%;padding:10px 12px;border-radius:13px;font-size:13px;line-height:1.5;white-space:pre-wrap;overflow-wrap:anywhere}
+.assistant-message.bot{align-self:flex-start;background:#1c3150;border:1px solid #315477;color:#e6f4ff;border-bottom-left-radius:4px}
+.assistant-message.user{align-self:flex-end;background:#075985;color:#fff;border-bottom-right-radius:4px}
+.assistant-message.error{border-color:#92400e;color:#fde68a}
+.assistant-context{padding:7px 13px;color:#9fb5ca;font-size:10px;border-top:1px solid #ffffff12}
+.assistant-form{display:flex;align-items:flex-end;gap:8px;padding:10px;border-top:1px solid #ffffff18;background:#0b162a}
+.assistant-input{flex:1;min-width:0;max-height:110px;resize:vertical;background:#1c2541;color:#f8fafc;border:1px solid #3b5276;border-radius:10px;padding:10px;font:inherit;font-size:13px}
+.assistant-input:focus{outline:2px solid #38bdf8;outline-offset:1px}
+.assistant-send{border:0;border-radius:10px;background:#087db8;color:#fff;font-weight:800;padding:11px 13px;min-height:40px;cursor:pointer}
+.assistant-send:disabled{opacity:.5;cursor:wait}
+@media(max-width:480px){.assistant-launch{right:12px;bottom:12px;padding:12px 14px}.assistant-panel{right:8px;bottom:68px;width:calc(100vw - 16px);height:min(590px,calc(100dvh - 86px));border-radius:14px}}
+@media(prefers-reduced-motion:reduce){.assistant-launch,.assistant-panel{scroll-behavior:auto}}
+
 </style>
 </head>
 <body>
@@ -267,6 +289,15 @@ footer{text-align:center;border-top:1px solid var(--border);padding:16px 8px;col
  <details><summary id="faqQ2">¿Para qué sirve consultar el viento y el oleaje antes de pescar?</summary><p id="faqA2">Te ayuda a valorar las condiciones previstas en la costa y a preparar la salida con más información. Comprueba siempre las condiciones reales y las recomendaciones de seguridad locales.</p></details>
  <details><summary id="faqQ3">¿Las previsiones garantizan que habrá buena pesca?</summary><p id="faqA3">No. Son datos orientativos para conocer las condiciones del mar y del tiempo; no garantizan capturas ni sustituyen la observación local o las indicaciones oficiales.</p></details>
 </section>
+
+<section class="assistant-panel" id="assistantPanel" role="dialog" aria-label="Mar & Pesca AI" aria-modal="false" hidden>
+ <div class="assistant-head"><div><strong id="assistantTitle">Asistente de pesca</strong><small id="assistantSubtitle">Consejos y ayuda con los datos de Mar &amp; Pesca</small></div><button class="assistant-close" id="assistantClose" type="button" aria-label="Cerrar">×</button></div>
+ <div class="assistant-messages" id="assistantMessages" aria-live="polite"><div class="assistant-message bot" id="assistantWelcome">¡Hola! Pregúntame sobre cebos, montajes, nudos o cómo interpretar las condiciones del mar.</div></div>
+ <div class="assistant-context" id="assistantContextNote">Usa la localidad y la fecha seleccionadas en la web.</div>
+ <form class="assistant-form" id="assistantForm"><textarea class="assistant-input" id="assistantInput" rows="2" maxlength="700" placeholder="Escribe tu pregunta…" aria-label="Tu pregunta" required></textarea><button class="assistant-send" id="assistantSend" type="submit">Enviar</button></form>
+</section>
+<button class="assistant-launch" id="assistantLaunch" type="button" aria-controls="assistantPanel" aria-expanded="false"><span aria-hidden="true">🎣</span><span id="assistantLaunchLabel">Pregúntale al asistente</span></button>
+
 <footer><div id="sourceTitle">Fuentes conectadas cuando responden correctamente:</div><div class="sources"><span class="source">WeatherMetro + Visual Crossing</span><span class="source">TideCheck</span><span class="source">Copernicus Marine</span></div><p style="margin-top:8px">Mar &amp; Pesca — El mar, antes de salir</p></footer>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
@@ -820,6 +851,80 @@ function applyLanguage(){
  document.querySelectorAll("[data-es]").forEach(el=>setTextPreservingChildren(el,el.dataset[lang]||el.dataset.es));
  try{renderAll();}catch(renderError){console.error("Mar & Pesca language render error:",renderError);}
 }
+
+/* Chat IA conectado al Worker independiente mar-pesca-assistant */
+const ASSISTANT_API_BASE = "https://mar-pesca-assistant.bestgold8899.workers.dev";
+const ASSISTANT_I18N = {
+ es:{launch:"Pregúntale al asistente",title:"Asistente de pesca",subtitle:"Consejos y ayuda con los datos de Mar & Pesca",welcome:"¡Hola! Pregúntame sobre cebos, montajes, nudos o cómo interpretar las condiciones del mar.",placeholder:"Escribe tu pregunta…",send:"Enviar",busy:"Pensando…",context:"Usa la localidad y la fecha seleccionadas en la web.",error:"No he podido responder ahora. Inténtalo de nuevo en unos segundos.",empty:"Escribe una pregunta antes de enviar.",close:"Cerrar"},
+ en:{launch:"Ask the assistant",title:"Fishing assistant",subtitle:"Fishing advice and help with Mar & Pesca data",welcome:"Hi! Ask me about bait, rigs, knots, or how to understand sea conditions.",placeholder:"Type your question…",send:"Send",busy:"Thinking…",context:"Uses the location and date selected on the website.",error:"I couldn't answer right now. Please try again in a few seconds.",empty:"Please enter a question first.",close:"Close"},
+ fr:{launch:"Demander à l’assistant",title:"Assistant de pêche",subtitle:"Conseils et aide avec les données de Mar & Pesca",welcome:"Bonjour ! Posez-moi vos questions sur les appâts, montages, nœuds ou les conditions de mer.",placeholder:"Écrivez votre question…",send:"Envoyer",busy:"Réflexion…",context:"Utilise le lieu et la date sélectionnés sur le site.",error:"Je ne peux pas répondre pour le moment. Réessayez dans quelques secondes.",empty:"Écrivez d’abord une question.",close:"Fermer"},
+ ar:{launch:"اسأل المساعد",title:"مساعد الصيد",subtitle:"نصائح ومساعدة ببيانات Mar & Pesca",welcome:"مرحباً! اسألني عن الطعوم أو التركيبات أو العقد أو فهم حالة البحر.",placeholder:"اكتب سؤالك…",send:"إرسال",busy:"جارٍ التفكير…",context:"يستخدم الموقع والتاريخ المحددين في الموقع.",error:"لم أتمكن من الإجابة الآن. حاول مرة أخرى بعد قليل.",empty:"اكتب سؤالاً أولاً.",close:"إغلاق"}
+};
+let assistantBusy=false;
+function assistantText(key){return ASSISTANT_I18N[lang]?.[key]||ASSISTANT_I18N.es[key]||key;}
+function assistantApplyLanguage(){
+ const values={assistantLaunchLabel:"launch",assistantTitle:"title",assistantSubtitle:"subtitle",assistantWelcome:"welcome",assistantContextNote:"context",assistantSend:"send",assistantClose:"close"};
+ Object.entries(values).forEach(([id,key])=>{const el=$(id);if(el){if(id==="assistantClose")el.setAttribute("aria-label",assistantText(key));else el.textContent=assistantText(key);}});
+ $("assistantInput").placeholder=assistantText("placeholder");
+}
+function assistantAddMessage(text,role="bot",isError=false){
+ const node=document.createElement("div");node.className="assistant-message "+role+(isError?" error":"");node.textContent=text;
+ $("assistantMessages").appendChild(node);$("assistantMessages").scrollTop=$("assistantMessages").scrollHeight;return node;
+}
+function assistantBuildContext(){
+ const day=(forecast?.days||[]).find(d=>d.date===selectedDate)||null;
+ const hours=(forecast?.hours||[]).filter(h=>dateOnly(h.time)===selectedDate);
+ const waves=wavesForDate(selectedDate);
+ const numericValues=[day?.tmin,day?.tmax,day?.wind,day?.gustMin,day?.gustMax,day?.rain,...hours.flatMap(h=>[h.temp,h.wind,h.gust,h.rain]),...waves.map(w=>w.height)];
+ const hasMeasurements=numericValues.some(v=>num(v)!==null);
+ if(!hasMeasurements)return null;
+ const tideEvents=(tidePayload?.extremes||[]).filter(e=>{
+  const t=typeof e.time==="number"?(e.time<1e12?e.time*1000:e.time):Date.parse(e.time||e.localTime||"");
+  return Number.isFinite(t)&&t>=Date.now();
+ }).sort((a,b)=>{
+  const t=e=>typeof e.time==="number"?(e.time<1e12?e.time*1000:e.time):Date.parse(e.time||e.localTime||"");
+  return t(a)-t(b);
+ }).slice(0,4).map(e=>({type:e.type,time:e.localTime||e.time,height:num(e.height)}));
+ return {
+  selected_location:LOCATIONS[$("location").value]?.name||$("location").value,
+  selected_date:selectedDate||null,
+  daily_forecast:day?{temperature_min_c:num(day.tmin),temperature_max_c:num(day.tmax),wind_max_kmh:num(day.wind),gust_min_kmh:num(day.gustMin),gust_max_kmh:num(day.gustMax),precipitation_mm:num(day.rain)}:null,
+  hourly_samples:hours.filter((h,i)=>i%3===0).slice(0,8).map(h=>({time:h.time,temperature_c:num(h.temp),wind_kmh:num(h.wind),gust_kmh:num(h.gust),rain_mm:num(h.rain),wind_direction_deg:num(h.dir)})),
+  waves_summary:waves.length?{height_min_m:Math.min(...waves.map(w=>w.height)),height_max_m:Math.max(...waves.map(w=>w.height)),periods_s:waves.map(w=>w.period).filter(v=>v!==null),directions_deg:waves.map(w=>w.direction).filter(v=>v!==null)}:null,
+  upcoming_tides:tideEvents,
+  moon_phase:tidePayload?.conditions?.moonPhase||null,
+  moon_illumination_percent:num(tidePayload?.conditions?.moonIllumination)
+ };
+}
+async function assistantSubmit(event){
+ event.preventDefault();if(assistantBusy)return;
+ const question=$("assistantInput").value.trim();if(!question){assistantAddMessage(assistantText("empty"),"bot",true);return;}
+ assistantAddMessage(question,"user");$("assistantInput").value="";assistantBusy=true;$("assistantSend").disabled=true;$("assistantSend").textContent=assistantText("busy");
+ const pending=assistantAddMessage(assistantText("busy"),"bot");
+ const payload={question,language:lang,location:$("location").value,date:selectedDate||"",context:assistantBuildContext()};
+ try{
+  const response=await fetch(ASSISTANT_API_BASE+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify(payload)});
+  const result=await response.json().catch(()=>({}));
+  if(!response.ok||result.ok!==true)throw new Error(result.error||"HTTP "+response.status);
+  pending.textContent=String(result.answer||"");if(!pending.textContent)pending.textContent=assistantText("error");
+ }catch(error){
+  pending.textContent=assistantText("error");
+  pending.classList.add("error");
+  console.error("Mar & Pesca assistant request failed:",error);
+ }finally{
+  assistantBusy=false;$("assistantSend").disabled=false;$("assistantSend").textContent=assistantText("send");$("assistantMessages").scrollTop=$("assistantMessages").scrollHeight;
+ }
+}
+function assistantOpen(open){
+ $("assistantPanel").hidden=!open;$("assistantLaunch").setAttribute("aria-expanded",String(open));
+ if(open){assistantApplyLanguage();$("assistantInput").focus();$("assistantMessages").scrollTop=$("assistantMessages").scrollHeight;}
+}
+$("assistantLaunch").addEventListener("click",()=>assistantOpen($("assistantPanel").hidden));
+$("assistantClose").addEventListener("click",()=>assistantOpen(false));
+$("assistantForm").addEventListener("submit",assistantSubmit);
+$("language").addEventListener("change",()=>{assistantApplyLanguage();});
+assistantApplyLanguage();
+
 $("mapRefresh").addEventListener("click",loadFishingMap);
 $("language").addEventListener("change",e=>{lang=e.target.value;try{localStorage.setItem("marpesca-guide-lang",lang)}catch(error){}applyLanguage()});
 $("location").addEventListener("change",()=>{selectedDate="";load()});
