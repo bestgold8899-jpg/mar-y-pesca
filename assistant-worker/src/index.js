@@ -60,8 +60,23 @@ async function sha256(value) {
   return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+function hasUsableContext(value, key = "") {
+  if (value === null || value === undefined) return false;
+  if (Array.isArray(value)) return value.some((item) => hasUsableContext(item));
+  if (typeof value === "object") {
+    return Object.entries(value).some(([childKey, child]) =>
+      hasUsableContext(child, childKey));
+  }
+  if (["ok", "source", "location", "station", "name", "id", "region"].includes(key.toLowerCase())) {
+    return false;
+  }
+  if (typeof value === "number") return Number.isFinite(value);
+  if (typeof value === "string") return value.trim().length > 0;
+  return false;
+}
+
 function looksLikeLiveConditionsQuestion(question) {
-  return /weather|forecast|wind|gust|wave|swell|tide|sea state|tomorrow|today|tonight|weather|viento|rachas|oleaje|olas|mareas|marea|marana|mañana|hoy|esta noche|tiempo|meteo|prévision|vent|houle|vagues|marée|demain|aujourd'hui|طقس|رياح|أمواج|مد|غدا|اليوم/i.test(question);
+  return /weather|forecast|wind|gust|wave|swell|tide|sea state|tomorrow|today|tonight|viento|rachas|oleaje|olas|mareas|marea|mañana|hoy|esta noche|tiempo|meteo|prévision|vent|houle|vagues|marée|demain|aujourd'hui|طقس|رياح|أمواج|مد|غدا|اليوم/i.test(question);
 }
 
 function buildPrompt({ question, language, location, date, context }) {
@@ -133,7 +148,9 @@ export default {
       ? body.location : "";
     const date = typeof body.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.date)
       ? body.date : "";
-    const context = body.context && typeof body.context === "object" ? body.context : null;
+    const context = body.context && typeof body.context === "object" && !Array.isArray(body.context)
+      ? body.context : null;
+    const contextAvailable = hasUsableContext(context);
 
     if (!question || question.length > MAX_QUESTION_CHARS) {
       return json({ ok: false, error: `Question must contain 1-${MAX_QUESTION_CHARS} characters` }, 400, headers);
@@ -166,7 +183,7 @@ export default {
       }
     }
 
-    if (!context && looksLikeLiveConditionsQuestion(question)) {
+    if (!contextAvailable && looksLikeLiveConditionsQuestion(question)) {
       const answer = {
         es: "Para valorar las condiciones necesito los datos actuales de la localidad y la fecha seleccionadas en Mar & Pesca. Selecciona una localidad y espera a que cargue la previsión.",
         en: "To assess conditions, I need the current data for the location and date selected in Mar & Pesca. Select a location and wait for its forecast to load.",
