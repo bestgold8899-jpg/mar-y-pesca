@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mar-pesca-assistant",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-23",
+  "ai": {
+    "binding": "AI"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "ASSISTANT_CACHE",
+      "id": "REPLACE_WITH_KV_NAMESPACE_ID"
+    }
+  ],
+  "vars": {
+    "ALLOWED_ORIGIN": "https://mar-y-pesca.bestgold8899.workers.dev",
+    "CACHE_TTL_SECONDS": "1800"
+  }
+}
