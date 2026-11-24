@@ -883,6 +883,10 @@ function assistantAddDays(date,amount){
  const value=new Date(Date.UTC(parts[0],parts[1]-1,parts[2]+amount));
  return value.toISOString().slice(0,10);
 }
+function assistantNormalizeText(value){
+ return String(value||"").normalize("NFKC").toLocaleLowerCase().normalize("NFD")
+  .replace(/[\u0300-\u036f]/g,"").replace(/[^\p{L}\p{N}]+/gu," ").replace(/\s+/g," ").trim();
+}
 function assistantResolveLocation(question){
  const text=" "+assistantNormalizeText(question)+" ";
  const aliases={
