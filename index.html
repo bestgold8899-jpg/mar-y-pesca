@@ -342,7 +342,7 @@ function arr(v){return Array.isArray(v)?v:[]}
 function num(v){if(v===null||v===undefined||v==="")return null;const n=Number(v);return Number.isFinite(n)?n:null}
 function fmt(v,d=0){const n=num(v);return n===null?tr("noData"):`${n.toFixed(d)}`}
 function dateOnly(v){if(!v)return "";if(v instanceof Date&&!Number.isNaN(v.getTime()))return v.toISOString().slice(0,10);return String(v).trim().slice(0,10)}
-function timeOnly(v){if(!v)return "—";const s=String(v).trim();const match=s.match(/(?:T|\\s)(\\d{2}:\\d{2})(?::\\d{2})?/);if(match)return match[1];const short=s.match(/^(\\d{2}:\\d{2})/);return short?short[1]:"—"}
+function timeOnly(v){if(!v)return "—";const s=String(v).trim();const match=s.match(/(?:T|\s)(\d{2}:\d{2})(?::\d{2})?/);if(match)return match[1];const short=s.match(/^(\d{2}:\d{2})/);return short?short[1]:"—"}
 function hourlyPrecipitation(hour){
  const values=[num(hour?.rain),num(hour?.showers)].filter(v=>v!==null);
  return values.length?Math.max(...values):null;
@@ -448,8 +448,8 @@ function wavesForDate(date){return (wavePayload?.records||[]).filter(r=>localWav
 function waveForHour(time,records=wavePayload?.records,utcOffsetSeconds=forecast?.utcOffsetSeconds??3600){
  if(!time||!records?.length)return null;
  const value=String(time).trim();let targetMs=Date.parse(value);
- if(!/[zZ]|[+-]\\d{2}:?\\d{2}$/.test(value)){
-  const m=value.match(/^(\\d{4})-(\\d{2})-(\\d{2})[T\\s](\\d{2}):(\\d{2})/);
+ if(!/[zZ]|[+-]\d{2}:?\d{2}$/.test(value)){
+  const m=value.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})/);
   if(m){const [,y,mo,d,h,mi]=m;targetMs=Date.UTC(+y,+mo-1,+d,+h,+mi)-(Number(utcOffsetSeconds)||3600)*1000;}
  }
  if(!Number.isFinite(targetMs))return null;
