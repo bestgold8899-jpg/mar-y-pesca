@@ -928,8 +928,8 @@ function assistantBuildContext(source={}){
  const locationCode=source.locationCode||$("location").value,targetDate=source.targetDate||selectedDate;
  const days=sourceForecast?.days||[];
  if(!days.length&&!sourceTides&&!sourceWaves)return null;
- let index=days.findIndex(day=>day.date===targetDate);if(index<0)index=0;
- const relevantDays=days.slice(index,index+3),relevantDates=new Set(relevantDays.map(day=>day.date).filter(Boolean));
+ const index=days.findIndex(day=>day.date===targetDate);
+ const relevantDays=index<0?[]:days.slice(index,index+3),relevantDates=new Set(relevantDays.map(day=>day.date).filter(Boolean));
  if(targetDate)relevantDates.add(targetDate);
  const dailyForecastByDate={},hourlyForecastByDate={},allHours=sourceForecast?.hours||[];
  relevantDays.forEach(day=>{
