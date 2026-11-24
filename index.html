@@ -1033,7 +1033,8 @@ async function assistantSubmit(event){
    assistantLastDate=requestedDate;
   }
  }catch(error){
-  pending.textContent=assistantText("error");pending.classList.add("error");
+  const detail=String(error?.message||error||"").trim().slice(0,140);
+  pending.textContent=assistantText("error")+(detail?" ("+detail+")":"");pending.classList.add("error");
   console.error("Mar & Pesca assistant request failed:",error);
  }finally{
   assistantBusy=false;$("assistantSend").disabled=false;$("assistantSend").textContent=assistantText("send");
