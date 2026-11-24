@@ -952,7 +952,7 @@ function assistantBuildContext(source={}){
  const days=sourceForecast?.days||[];
  if(!days.length&&!sourceTides&&!sourceWaves)return null;
  const index=days.findIndex(day=>day.date===targetDate);
- const relevantDays=index<0?[]:days.slice(index,index+3),relevantDates=new Set(relevantDays.map(day=>day.date).filter(Boolean));
+ const relevantDays=index<0?[]:[days[index]],relevantDates=new Set(relevantDays.map(day=>day.date).filter(Boolean));
  if(targetDate)relevantDates.add(targetDate);
  const dailyForecastByDate={},hourlyForecastByDate={},allHours=sourceForecast?.hours||[];
  relevantDays.forEach(day=>{
@@ -983,7 +983,7 @@ function assistantBuildContext(source={}){
    const rows=allHours.filter(hour=>dateOnly(hour.time)===date);
    const hourlyAssessments=rows.map(hour=>{
     const wave=waveForHour(hour.time,waveRecords,sourceForecast?.utcOffsetSeconds??3600);
-    return {time:hour.time,...calculateFishingAssessment({wind:num(hour.wind),gust:num(hour.gust),wave:wave?.height??null,rain:num(hourlyPrecipitation(hour))})};
+    const assessment=calculateFishingAssessment({wind:num(hour.wind),gust:num(hour.gust),wave:wave?.height??null,rain:num(hourlyPrecipitation(hour))});return {time:timeOnly(hour.time),score:assessment.score,category:assessment.category,factors:(assessment.factors||[]).map(f=>({key:f.key,score:f.score}))};
    });
    const validScores=hourlyAssessments.filter(item=>item.score!==null).map(item=>item.score);
    const dailyScore=validScores.length?Math.round(validScores.reduce((sum,value)=>sum+value,0)/validScores.length):null;
