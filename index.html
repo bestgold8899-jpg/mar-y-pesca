@@ -872,131 +872,128 @@ function assistantAddMessage(text,role="bot",isError=false){
  const node=document.createElement("div");node.className="assistant-message "+role+(isError?" error":"");node.textContent=text;
  $("assistantMessages").appendChild(node);$("assistantMessages").scrollTop=$("assistantMessages").scrollHeight;return node;
 }
-function assistantBuildContext(){
- const days=forecast?.days||[];
- if(!days.length)return null;
-
- // El asistente necesita contexto cercano a la fecha elegida, no el mes
- // completo de mareas ni todas las horas y registros de oleaje.
- let selectedIndex=days.findIndex(day=>day.date===selectedDate);
- if(selectedIndex<0)selectedIndex=0;
- const relevantDays=days.slice(selectedIndex,selectedIndex+3);
- const relevantDates=new Set(relevantDays.map(day=>day.date).filter(Boolean));
- const allHours=forecast?.hours||[];
- const dailyForecastByDate={};
- const hourlyForecastByDate={};
-
- relevantDays.forEach(day=>{
-  const date=day.date;
-  if(!date)return;
-  dailyForecastByDate[date]={
-   temperature_min_c:num(day.tmin),
-   temperature_max_c:num(day.tmax),
-   wind_max_kmh:num(day.wind),
-   gust_min_kmh:num(day.gustMin),
-   gust_max_kmh:num(day.gustMax),
-   precipitation_mm:num(day.rain),
-   pressure_hpa:num(day.pressure),
-   weather_code:day.code??null
-  };
-
-  const rows=allHours.filter(hour=>dateOnly(hour.time)===date);
-  // Ocho puntos horarios por día bastan para describir la evolución
-  // sin enviar las 24 observaciones completas.
-  const sampled=rows.filter((hour,index)=>index%3===0).slice(0,8);
-  if(sampled.length)hourlyForecastByDate[date]=sampled.map(hour=>({
-   time:hour.time,
-   temperature_c:num(hour.temp),
-   wind_kmh:num(hour.wind),
-   gust_kmh:num(hour.gust),
-   rain_mm:num(hourlyPrecipitation(hour)),
-   wind_direction_deg:num(hour.dir)
-  }));
- });
-
- const wavesByDate={};
- relevantDays.forEach(day=>{
-  const records=wavesForDate(day.date);
-  if(!records.length)return;
-  const heights=records.map(record=>record.height).filter(Number.isFinite);
-  const periods=records.map(record=>record.period).filter(Number.isFinite);
-  const directions=records.map(record=>record.direction).filter(Number.isFinite);
-  let meanDirection=null;
-  if(directions.length){
-   const radians=directions.map(value=>value*Math.PI/180);
-   const x=radians.reduce((sum,value)=>sum+Math.cos(value),0);
-   const y=radians.reduce((sum,value)=>sum+Math.sin(value),0);
-   meanDirection=(Math.atan2(y,x)*180/Math.PI+360)%360;
-  }
-  wavesByDate[day.date]={
-   height_min_m:heights.length?Math.min(...heights):null,
-   height_max_m:heights.length?Math.max(...heights):null,
-   period_min_s:periods.length?Math.min(...periods):null,
-   period_max_s:periods.length?Math.max(...periods):null,
-   mean_direction_deg:meanDirection
-  };
- });
-
- const tidesByDate={};
- (tidePayload?.extremes||[]).forEach(extreme=>{
-  const date=extreme.localDate||dateOnly(extreme.localTime||extreme.time);
-  if(!date||!relevantDates.has(date))return;
-  if(!tidesByDate[date])tidesByDate[date]=[];
-  tidesByDate[date].push({
-   type:extreme.type||null,
-   time:extreme.localTime||extreme.time||null,
-   height_m:num(extreme.height)
-  });
- });
-
- const moonByDate={};
- (tidePayload?.daily||[]).forEach(day=>{
-  const date=dateOnly(day.dateLocal||day.date);
-  if(!date||!relevantDates.has(date))return;
-  moonByDate[date]={
-   phase:day.moonPhase||null,
-   illumination_percent:num(day.moonIllumination)
-  };
- });
-
- const hasData=Object.keys(dailyForecastByDate).length||
-  Object.keys(hourlyForecastByDate).length||
-  Object.keys(wavesByDate).length||
-  Object.keys(tidesByDate).length||
-  Object.keys(moonByDate).length;
- if(!hasData)return null;
-
- return {
-  selected_location:LOCATIONS[$("location").value]?.name||$("location").value,
-  selected_date:selectedDate||relevantDays[0]?.date||null,
-  forecast_dates:relevantDays.map(day=>day.date).filter(Boolean),
-  daily_forecast_by_date:dailyForecastByDate,
-  hourly_forecast_by_date:hourlyForecastByDate,
-  waves_by_date:wavesByDate,
-  tides_by_date:tidesByDate,
-  moon_by_date:moonByDate,
-  tide_station:tidePayload?.station?.name||null,
-  moon_current_phase:tidePayload?.conditions?.moonPhase||null,
-  moon_current_illumination_percent:num(tidePayload?.conditions?.moonIllumination)
+function assistantLocalToday(){
+ const parts=new Intl.DateTimeFormat("en-CA",{timeZone:"Africa/Casablanca",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+ const values=Object.fromEntries(parts.map(part=>[part.type,part.value]));
+ return values.year+"-"+values.month+"-"+values.day;
+}
+function assistantAddDays(date,amount){
+ const parts=String(date||"").match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);
+ if(!parts)return "";
+ const value=new Date(Date.UTC(Number(parts[1]),Number(parts[2])-1,Number(parts[3])+amount));
+ return value.toISOString().slice(0,10);
+}
+function assistantNormalizeText(value){
+ return String(value||"").normalize("NFKC").toLocaleLowerCase().normalize("NFD")
+  .replace(/[\\u0300-\\u036f]/g,"").replace(/[^\\p{L}\\p{N}]+/gu," ").replace(/\\s+/g," ").trim();
+}
+function assistantResolveLocation(question){
+ const text=" "+assistantNormalizeText(question)+" ";
+ const aliases={
+  "mdiq":["mdiq","m diq","mediq"],"martil":["martil"],
+  "fnideq":["fnideq","fnidec","castillejos"],"tanger":["tanger","tangier"],
+  "al-hoceima":["al hoceima","alhucemas","hoceima"],"nador":["nador"],
+  "casablanca":["casablanca"],"agadir":["agadir"],"dakhla":["dakhla"],
+  "asilah":["asilah","assilah"],"larache":["larache"],"mehdia":["mehdia","mehdya"],
+  "el-jadida":["el jadida","mazagan"],"safi":["safi"],"essaouira":["essaouira","mogador"],
+  "sidi-ifni":["sidi ifni"],"tan-tan-plage":["tan tan plage","tan tan"],
+  "tarfaya":["tarfaya"],"laayoune-plage":["laayoune plage","laayoune","el aaiun"]
  };
+ const matches=[];
+ for(const [code,names] of Object.entries(aliases))for(const name of names){
+  const alias=assistantNormalizeText(name);
+  if(alias&&text.includes(" "+alias+" "))matches.push({code,length:alias.length});
+ }
+ matches.sort((a,b)=>b.length-a.length);
+ return matches[0]?.code||$("location").value;
+}
+function assistantResolveDate(question){
+ const text=assistantNormalizeText(question),today=assistantLocalToday();
+ if(/\\b(pasado manana|day after tomorrow|apres demain)\\b/.test(text)||text.includes("بعد غد"))return assistantAddDays(today,2);
+ if(/\\b(manana|tomorrow|demain)\\b/.test(text)||text.includes("غدا"))return assistantAddDays(today,1);
+ if(/\\b(hoy|today|aujourd hui)\\b/.test(text)||text.includes("اليوم"))return today;
+ const iso=text.match(/\\b(20\\d{2})[ /-](\\d{1,2})[ /-](\\d{1,2})\\b/);
+ if(iso)return iso[1]+"-"+String(iso[2]).padStart(2,"0")+"-"+String(iso[3]).padStart(2,"0");
+ const dmy=text.match(/\\b(\\d{1,2})[ /-](\\d{1,2})[ /-](20\\d{2})\\b/);
+ if(dmy)return dmy[3]+"-"+String(dmy[2]).padStart(2,"0")+"-"+String(dmy[1]).padStart(2,"0");
+ const weekdays={domingo:0,sunday:0,dimanche:0,lunes:1,monday:1,lundi:1,martes:2,tuesday:2,mardi:2,miercoles:3,wednesday:3,mercredi:3,jueves:4,thursday:4,jeudi:4,viernes:5,friday:5,vendredi:5,sabado:6,saturday:6,samedi:6};
+ const [year,month,day]=today.split("-").map(Number);
+ const weekdayNow=new Date(Date.UTC(year,month-1,day)).getUTCDay();
+ for(const [name,weekday] of Object.entries(weekdays))if(new RegExp("\\b"+name+"\\b").test(text)){
+  let delta=(weekday-weekdayNow+7)%7;if(delta===0)delta=7;return assistantAddDays(today,delta);
+ }
+ return selectedDate||today;
+}
+function assistantBuildContext(source={}){
+ const sourceForecast=source.forecastData||forecast,sourceTides=source.tideData||tidePayload,sourceWaves=source.waveData||wavePayload;
+ const locationCode=source.locationCode||$("location").value,targetDate=source.targetDate||selectedDate;
+ const days=sourceForecast?.days||[];
+ if(!days.length&&!sourceTides&&!sourceWaves)return null;
+ let index=days.findIndex(day=>day.date===targetDate);if(index<0)index=0;
+ const relevantDays=days.slice(index,index+3),relevantDates=new Set(relevantDays.map(day=>day.date).filter(Boolean));
+ if(targetDate)relevantDates.add(targetDate);
+ const dailyForecastByDate={},hourlyForecastByDate={},allHours=sourceForecast?.hours||[];
+ relevantDays.forEach(day=>{
+  const date=day.date;if(!date)return;
+  dailyForecastByDate[date]={temperature_min_c:num(day.tmin),temperature_max_c:num(day.tmax),wind_max_kmh:num(day.wind),gust_min_kmh:num(day.gustMin),gust_max_kmh:num(day.gustMax),precipitation_mm:num(day.rain),pressure_hpa:num(day.pressure),weather_code:day.code??null};
+  const rows=allHours.filter(hour=>dateOnly(hour.time)===date),sampled=rows.filter((hour,i)=>i%3===0).slice(0,8);
+  if(sampled.length)hourlyForecastByDate[date]=sampled.map(hour=>({time:hour.time,temperature_c:num(hour.temp),wind_kmh:num(hour.wind),gust_kmh:num(hour.gust),rain_mm:num(hourlyPrecipitation(hour)),wind_direction_deg:num(hour.dir)}));
+ });
+ const offset=(sourceForecast?.utcOffsetSeconds??3600)*1000,waveRecords=sourceWaves?.records||[],wavesByDate={};
+ for(const date of relevantDates){
+  const records=waveRecords.filter(record=>{const ms=Date.parse(record.time);return Number.isFinite(ms)&&new Date(ms+offset).toISOString().slice(0,10)===date;});
+  if(!records.length)continue;
+  const heights=records.map(r=>r.height).filter(Number.isFinite),periods=records.map(r=>r.period).filter(Number.isFinite),directions=records.map(r=>r.direction).filter(Number.isFinite);
+  let meanDirection=null;if(directions.length){const radians=directions.map(v=>v*Math.PI/180),x=radians.reduce((a,v)=>a+Math.cos(v),0),y=radians.reduce((a,v)=>a+Math.sin(v),0);meanDirection=(Math.atan2(y,x)*180/Math.PI+360)%360;}
+  wavesByDate[date]={height_min_m:heights.length?Math.min(...heights):null,height_max_m:heights.length?Math.max(...heights):null,period_min_s:periods.length?Math.min(...periods):null,period_max_s:periods.length?Math.max(...periods):null,mean_direction_deg:meanDirection};
+ }
+ const tidesByDate={};(sourceTides?.extremes||[]).forEach(extreme=>{
+  const date=extreme.localDate||dateOnly(extreme.localTime||extreme.time);if(!date||!relevantDates.has(date))return;
+  if(!tidesByDate[date])tidesByDate[date]=[];tidesByDate[date].push({type:extreme.type||null,time:extreme.localTime||extreme.time||null,height_m:num(extreme.height)});
+ });
+ const moonByDate={};(sourceTides?.daily||[]).forEach(day=>{
+  const date=dateOnly(day.dateLocal||day.date);if(!date||!relevantDates.has(date))return;
+  moonByDate[date]={phase:day.moonPhase||null,illumination_percent:num(day.moonIllumination)};
+ });
+ const hasData=Object.keys(dailyForecastByDate).length||Object.keys(hourlyForecastByDate).length||Object.keys(wavesByDate).length||Object.keys(tidesByDate).length||Object.keys(moonByDate).length;
+ if(!hasData)return null;
+ return {selected_location:LOCATIONS[locationCode]?.name||locationCode,selected_date:targetDate||relevantDays[0]?.date||null,forecast_dates:relevantDays.map(day=>day.date).filter(Boolean),daily_forecast_by_date:dailyForecastByDate,hourly_forecast_by_date:hourlyForecastByDate,waves_by_date:wavesByDate,tides_by_date:tidesByDate,moon_by_date:moonByDate,tide_station:sourceTides?.station?.name||null,moon_current_phase:sourceTides?.conditions?.moonPhase||null,moon_current_illumination_percent:num(sourceTides?.conditions?.moonIllumination)};
+}
+async function assistantFetchLocationContext(locationCode,targetDate){
+ const loc=LOCATIONS[locationCode];if(!loc)throw new Error("Localidad no reconocida.");
+ const urls=[`${API_BASE}/api/forecast?location=${encodeURIComponent(locationCode)}&lat=${loc.lat}&lng=${loc.lng}&days=7`,`${API_BASE}/api/tides/month?location=${encodeURIComponent(locationCode)}&lat=${loc.lat}&lng=${loc.lng}&days=37`,`${API_BASE}/api/oleaje?location=${encodeURIComponent(locationCode)}`];
+ const results=await Promise.allSettled(urls.map(url=>getJson(url))),values=results.map(r=>r.status==="fulfilled"?r.value:null);
+ const context=assistantBuildContext({locationCode,targetDate,forecastData:values[0]?normalizeForecast(values[0]):null,tideData:values[1]?normalizeTides(values[1]):null,waveData:values[2]?normalizeWaves(values[2]):null});
+ if(!context)throw new Error("No hay datos disponibles para esa localidad.");
+ return context;
 }
 async function assistantSubmit(event){
  event.preventDefault();if(assistantBusy)return;
- const question=$("assistantInput").value.trim();if(!question){assistantAddMessage(assistantText("empty"),"bot",true);return;}
- assistantAddMessage(question,"user");$("assistantInput").value="";assistantBusy=true;$("assistantSend").disabled=true;$("assistantSend").textContent=assistantText("busy");
+ const question=$("assistantInput").value.trim();
+ if(!question){assistantAddMessage(assistantText("empty"),"bot",true);return;}
+ assistantAddMessage(question,"user");$("assistantInput").value="";
+ assistantBusy=true;$("assistantSend").disabled=true;$("assistantSend").textContent=assistantText("busy");
  const pending=assistantAddMessage(assistantText("busy"),"bot");
- const payload={question,language:lang,location:$("location").value,date:selectedDate||"",context:assistantBuildContext()};
  try{
+  const requestedLocation=assistantResolveLocation(question),requestedDate=assistantResolveDate(question);
+  const currentDates=(forecast?.days||[]).map(day=>day.date);
+  let context;
+  if(requestedLocation===$("location").value&&currentDates.includes(requestedDate)){
+   context=assistantBuildContext({locationCode:requestedLocation,targetDate:requestedDate});
+  }else{
+   context=await assistantFetchLocationContext(requestedLocation,requestedDate);
+  }
+  const payload={question,language:lang,location:requestedLocation,date:requestedDate,context};
   const response=await fetch(ASSISTANT_API_BASE+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify(payload)});
   const result=await response.json().catch(()=>({}));
   if(!response.ok||result.ok!==true)throw new Error(result.error||"HTTP "+response.status);
   pending.textContent=String(result.answer||"");if(!pending.textContent)pending.textContent=assistantText("error");
  }catch(error){
-  pending.textContent=assistantText("error");
-  pending.classList.add("error");
+  pending.textContent=assistantText("error");pending.classList.add("error");
   console.error("Mar & Pesca assistant request failed:",error);
  }finally{
-  assistantBusy=false;$("assistantSend").disabled=false;$("assistantSend").textContent=assistantText("send");$("assistantMessages").scrollTop=$("assistantMessages").scrollHeight;
+  assistantBusy=false;$("assistantSend").disabled=false;$("assistantSend").textContent=assistantText("send");
+  $("assistantMessages").scrollTop=$("assistantMessages").scrollHeight;
  }
 }
 function assistantOpen(open){
