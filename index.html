@@ -996,6 +996,30 @@ function assistantBuildContext(source={}){
  if(!hasData)return null;
  return {selected_location:LOCATIONS[locationCode]?.name||locationCode,selected_date:targetDate||relevantDays[0]?.date||null,forecast_dates:relevantDays.map(day=>day.date).filter(Boolean),daily_forecast_by_date:dailyForecastByDate,hourly_forecast_by_date:hourlyForecastByDate,daily_activity_assessment_by_date:dailyActivityAssessmentByDate,hourly_activity_assessment_by_date:hourlyActivityAssessmentByDate,waves_by_date:wavesByDate,tides_by_date:tidesByDate,moon_by_date:moonByDate,tide_station:sourceTides?.station?.name||null,moon_current_phase:sourceTides?.conditions?.moonPhase||null,moon_current_illumination_percent:num(sourceTides?.conditions?.moonIllumination)};
 }
+function assistantLimitContext(context,maxChars=8500){
+ if(!context||typeof context!=="object")return context;
+ const compact=JSON.parse(JSON.stringify(context));
+ const size=()=>JSON.stringify(compact).length;
+ Object.values(compact.hourly_activity_assessment_by_date||{}).forEach(rows=>{
+  if(Array.isArray(rows))rows.forEach(item=>{if(item&&typeof item==="object")delete item.factors;});
+ });
+ Object.values(compact.hourly_forecast_by_date||{}).forEach(rows=>{if(Array.isArray(rows)&&rows.length>4)rows.splice(4);});
+ Object.values(compact.tides_by_date||{}).forEach(rows=>{if(Array.isArray(rows)&&rows.length>6)rows.splice(6);});
+ if(size()>maxChars)delete compact.hourly_forecast_by_date;
+ if(size()>maxChars){delete compact.moon_current_illumination_percent;delete compact.moon_current_phase;delete compact.tide_station;}
+ if(size()>maxChars){
+  Object.values(compact.hourly_activity_assessment_by_date||{}).forEach(rows=>{
+   if(Array.isArray(rows)&&rows.length>16){
+    const step=(rows.length-1)/15;
+    const selected=Array.from({length:16},(_,i)=>rows[Math.round(i*step)]);
+    rows.splice(0,rows.length,...selected);
+   }
+  });
+ }
+ const finalSize=size();
+ if(finalSize>maxChars)throw new Error("El contexto de previsión sigue siendo demasiado grande ("+finalSize+" caracteres).");
+ return compact;
+}
 async function assistantFetchLocationContext(locationCode,targetDate){
  const loc=LOCATIONS[locationCode];if(!loc)throw new Error("Localidad no reconocida.");
  const urls=[`${API_BASE}/api/forecast?location=${encodeURIComponent(locationCode)}&lat=${loc.lat}&lng=${loc.lng}&days=7`,`${API_BASE}/api/tides/month?location=${encodeURIComponent(locationCode)}&lat=${loc.lat}&lng=${loc.lng}&days=37`,`${API_BASE}/api/oleaje?location=${encodeURIComponent(locationCode)}`];
@@ -1021,6 +1045,9 @@ async function assistantSubmit(event){
   }else{
    context=await assistantFetchLocationContext(requestedLocation,requestedDate);
   }
+  context=assistantLimitContext(context);
+  const contextChars=JSON.stringify(context).length;
+  console.info("Mar & Pesca assistant context size:",contextChars);
   const history=assistantHistory.slice(-12);
   const payload={question,language:lang,location:requestedLocation,date:requestedDate,context,history};
   const response=await fetch(ASSISTANT_API_BASE+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify(payload)});
