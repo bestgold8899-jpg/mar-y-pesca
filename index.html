@@ -676,48 +676,60 @@ function renderMoon(daily){
   el.innerHTML=`<span>${dateOnly(d.date)}</span><span>${phase}</span><b>${illum}</b>`;host.appendChild(el);
  });
 }
+// Motor único: las cuatro vistas usan exactamente estos umbrales y pesos.
+// Estimación orientativa para pesca desde costa; no predice capturas.
+function fishingFactorScores({wind,gust,wave,rain}){
+ const factors=[];
+ if(Number.isFinite(wind))factors.push({key:"wind",score:wind<=8?92:wind<=14?82:wind<=20?65:wind<=27?38:10,weight:35,value:wind});
+ if(Number.isFinite(gust))factors.push({key:"gust",score:gust<=15?90:gust<=25?70:gust<=35?40:10,weight:20,value:gust});
+ if(Number.isFinite(wave))factors.push({key:"wave",score:wave<0.2?55:wave<=0.8?90:wave<=1.2?78:wave<=1.7?52:wave<=2.2?25:8,weight:35,value:wave});
+ if(Number.isFinite(rain))factors.push({key:"rain",score:rain<=0.1?90:rain<=1?70:rain<=3?40:10,weight:10,value:rain});
+ return factors;
+}
+function calculateFishingAssessment(input={}){
+ const wind=num(input.wind),gust=num(input.gust),wave=num(input.wave),rain=num(input.rain);
+ if(wind===null||wave===null)return {score:null,category:"insufficient_data",label:"Datos insuficientes",factors:[]};
+ const factors=fishingFactorScores({wind,gust,wave,rain}),weight=factors.reduce((sum,f)=>sum+f.weight,0);
+ const score=Math.round(factors.reduce((sum,f)=>sum+f.score*f.weight,0)/weight);
+ const category=score>=75?"favorable":score>=50?"caution":"unfavorable";
+ return {score,category,factors:factors.map(f=>({key:f.key,score:f.score,value:f.value,weight:f.weight}))};
+}
+function fishingAssessmentColor(a){return !a||!Number.isFinite(a.score)?"#94a3b8":a.score>=75?"#34d399":a.score>=50?"#fbbf24":"#fb7185";}
+function fishingAssessmentFactorText(factors){
+ const names={wind:"Viento",gust:"Rachas",wave:"Oleaje",rain:"Lluvia"};
+ return (factors||[]).map(f=>(names[f.key]||f.key)+": "+f.score+"/100").join(" · ");
+}
+
 function renderActivity(){
  const day=forecast?.days?.find(d=>d.date===selectedDate);
  const rows=(forecast?.hours||[]).filter(h=>dateOnly(h.time)===selectedDate);
- const values=arr=>arr.map(num).filter(v=>v!==null&&Number.isFinite(v));
- const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
- const wind=mean(values(rows.map(h=>h.wind)))??num(day?.wind);
- const gust=mean(values(rows.map(h=>h.gust)))??num(day?.gust);
- const waveRecords=wavesForDate(selectedDate),wave=mean(values(waveRecords.map(w=>w.height)));
- const moonDay=(tidePayload?.daily||[]).find(d=>dateOnly(d.dateLocal||d.date)===selectedDate);
- const moon=num(moonDay?.moonIllumination??tidePayload?.conditions?.moonIllumination);
- const tideEvents=(tidePayload?.extremes||[]).filter(e=>dateOnly(e.localDate||e.localTime||e.time)===selectedDate).map(e=>({ms:tideEventMs(e),type:tideType(e)})).filter(e=>Number.isFinite(e.ms)&&e.type).sort((a,b)=>a.ms-b.ms);
- const tideKnown=tideEvents.length>=2&&tideEvents.some(e=>e.type==="high")&&tideEvents.some(e=>e.type==="low");
- // Reglas heurísticas transparentes para condiciones generales de pesca desde costa; no son un modelo científico ni específico de especie.
- const factors=[];
- if(wind!==null){const score=wind<=8?92:wind<=15?82:wind<=22?65:wind<=30?38:15;factors.push({name:lang==="en"?"Wind":lang==="fr"?"Vent":lang==="ar"?"الرياح":"Viento",score,weight:20});}
- if(gust!==null){const score=gust<=15?95:gust<=25?78:gust<=35?48:20;factors.push({name:lang==="en"?"Gusts":lang==="fr"?"Rafales":lang==="ar"?"الهبات":"Rachas",score,weight:10});}
- if(wave!==null){const score=wave<0.2?55:wave<=0.8?90:wave<=1.3?78:wave<=1.8?55:wave<=2.5?30:10;factors.push({name:lang==="en"?"Waves":lang==="fr"?"Houle":lang==="ar"?"الأمواج":"Oleaje",score,weight:25});}
- if(tideKnown){factors.push({name:lang==="en"?"Tides":lang==="fr"?"Marée":lang==="ar"?"المد والجزر":"Marea",score:78,weight:20});}
- if(moon!==null&&moon>=0&&moon<=100){const phaseScore=moon<=15||moon>=85?82:moon<=35||moon>=65?72:62;factors.push({name:lang==="en"?"Moon":lang==="fr"?"Lune":lang==="ar"?"القمر":"Luna",score:phaseScore,weight:10});}
- const pressure=num(day?.pressure);
- if(pressure!==null){const pressureScore=pressure>=1005&&pressure<=1025?78:pressure>=995&&pressure<=1035?58:35;factors.push({name:lang==="en"?"Pressure":lang==="fr"?"Pression":lang==="ar"?"الضغط":"Presión",score:pressureScore,weight:5});}
- const rain=num(day?.rain);
- if(rain!==null){const rainScore=rain<=0.2?90:rain<=2?75:rain<=8?50:25;factors.push({name:lang==="en"?"Rain":lang==="fr"?"Pluie":lang==="ar"?"الأمطار":"Lluvia",score:rainScore,weight:5});}
- const totalWeight=factors.reduce((sum,f)=>sum+f.weight,0);
- const enough=wind!==null&&wave!==null&&tideKnown;
-  if(!enough||totalWeight<55){$("activityScore").textContent="— / 100";$("activityLabel").textContent=lang==="en"?"Insufficient data":lang==="fr"?"Données insuffisantes":lang==="ar"?"بيانات غير كافية":"Datos insuficientes";$("activityExplain").textContent=lang==="en"?"The score appears when real wind, wave and tide data are available for this day.":lang==="fr"?"La note apparaît lorsque le vent, la houle et les marées disposent de données réelles pour ce jour.":lang==="ar"?"يظهر التقييم عند توفر بيانات حقيقية عن الرياح والأمواج والمد والجزر لهذا اليوم.":"La nota aparece cuando hay datos reales de viento, oleaje y mareas para este día.";return;}
- const score=Math.round(factors.reduce((sum,f)=>sum+f.score*f.weight,0)/totalWeight);
- const label=score>=75?(lang==="en"?"Favorable activity":lang==="fr"?"Activité favorable":lang==="ar"?"نشاط ملائم":"Actividad favorable"):score>=50?(lang==="en"?"Moderate activity":lang==="fr"?"Activité modérée":lang==="ar"?"نشاط متوسط":"Actividad moderada"):(lang==="en"?"Low activity":lang==="fr"?"Activité faible":lang==="ar"?"نشاط منخفض":"Actividad baja");
- $("activityScore").textContent=`${score} / 100`;
- $("activityLabel").textContent=label;
- const details=factors.map(f=>`${f.name}: ${Math.round(f.score)}/100`).join(" · ");
- $("activityExplain").textContent=(lang==="en"?"Indicative coastal conditions estimate; it does not guarantee catches. ":lang==="fr"?"Estimation indicative des conditions générales depuis la côte — pas une garantie de capture. ":lang==="ar"?"تقدير إرشادي للظروف العامة للصيد من الساحل، وليس ضماناً للصيد. ":"Estimación orientativa de las condiciones generales desde costa; no garantiza capturas. ")+details;
+ const maxOf=values=>{const valid=values.map(num).filter(v=>v!==null&&Number.isFinite(v));return valid.length?Math.max(...valid):null;};
+ const wind=num(day?.wind)??maxOf(rows.map(h=>h.wind));
+ const gust=num(day?.gustMax??day?.gust)??maxOf(rows.map(h=>h.gust));
+ const wave=maxOf(wavesForDate(selectedDate).map(w=>w.height));
+ const assessment=calculateFishingAssessment({wind,gust,wave,rain:num(day?.rain)});
+ if(assessment.score===null){
+  $("activityScore").textContent="— / 100";
+  $("activityLabel").textContent=lang==="en"?"Insufficient data":lang==="fr"?"Données insuffisantes":lang==="ar"?"بيانات غير كافية":"Datos insuficientes";
+  $("activityExplain").textContent=lang==="en"?"Real wind and wave data are required for this estimate.":lang==="fr"?"Des données réelles de vent et de houle sont nécessaires.":lang==="ar"?"يلزم توفر بيانات فعلية عن الرياح والأمواج.":"Se necesitan datos reales de viento y oleaje para calcular esta nota.";
+  return;
+ }
+ const labels=lang==="en"?{good:"Favorable",fair:"Acceptable with caution",bad:"Unfavorable"}:lang==="fr"?{good:"Favorable",fair:"Acceptable avec prudence",bad:"Défavorable"}:lang==="ar"?{good:"ملائم",fair:"مقبول مع الحذر",bad:"غير ملائم"}:{good:"Favorable",fair:"Aceptable con precaución",bad:"Desfavorable"};
+ $("activityScore").textContent=assessment.score+" / 100";
+ $("activityLabel").textContent=assessment.category==="favorable"?labels.good:assessment.category==="caution"?labels.fair:labels.bad;
+ $("activityExplain").textContent=(lang==="en"?"Shared coastal-fishing estimate; catches are not guaranteed. ":lang==="fr"?"Estimation commune pour la pêche depuis la côte ; aucune prise n'est garantie. ":lang==="ar"?"تقييم موحد للصيد من الساحل؛ ولا يضمن الصيد. ":"Estimación común para pesca desde costa; no garantiza capturas. ")+fishingAssessmentFactorText(assessment.factors);
 }
 
 function renderBestFishingTime(){
- const host=$("bestSlots"),hours=(forecast?.hours||[]).filter(h=>dateOnly(h.time)===selectedDate),c=lang==="fr"?{title:"Meilleur moment pour pêcher",sub:"Évaluation indicative de chaque heure selon les données disponibles.",none:"Données insuffisantes",note:"Chaque heure est évaluée séparément. Estimation indicative, sans garantie de prises."}:lang==="ar"?{title:"أفضل وقت للصيد",sub:"تقييم إرشادي لكل ساعة حسب البيانات المتاحة.",none:"بيانات غير كافية",note:"يتم تقييم كل ساعة على حدة. تقدير إرشادي وليس ضماناً للصيد."}:lang==="en"?{title:"Best time to fish",sub:"Hourly fishing conditions based on the available forecast data.",none:"Insufficient data",note:"Each hour is assessed separately. Indicative estimate only; catches are not guaranteed."}:{title:"¿Cuándo es mejor pescar?",sub:"Valoración de cada hora según los datos disponibles.",none:"Datos insuficientes",note:"Cada hora se evalúa por separado. Es una estimación y no garantiza capturas."};
+ const host=$("bestSlots"),hours=(forecast?.hours||[]).filter(h=>dateOnly(h.time)===selectedDate);
+ const c=lang==="fr"?{title:"Meilleur moment pour pêcher",sub:"Même critère appliqué séparément à chaque heure.",none:"Données insuffisantes",note:"Même méthode que la note quotidienne. Estimation indicative, sans garantie de prises."}:lang==="ar"?{title:"أفضل وقت للصيد",sub:"يُطبق معيار التقييم نفسه على كل ساعة.",none:"بيانات غير كافية",note:"نفس منهجية التقييم اليومي. تقدير إرشادي وليس ضماناً للصيد."}:lang==="en"?{title:"Best time to fish",sub:"The same assessment criteria are applied to each hour.",none:"Insufficient data",note:"Same method as the daily score. Indicative estimate only; catches are not guaranteed."}:{title:"¿Cuándo es mejor pescar?",sub:"Se aplica el mismo criterio de valoración a cada hora.",none:"Datos insuficientes",note:"Mismo método que la nota diaria. Estimación orientativa; no garantiza capturas."};
  $("bestTitle").textContent=c.title;$("bestSub").textContent=c.sub;$("bestNote").textContent=c.note;
- const scored=hours.map(h=>{const w=num(h.wind),g=num(h.gust),wr=waveForHour(h.time),v=wr?.height??null,r=num(h.rain);if(w===null||v===null)return {time:h.time,score:null,wind:w,wave:v};const score=(w<=8?90:w<=14?78:w<=20?58:w<=27?35:10)*.38+(g===null?65:g<=15?90:g<=25?70:g<=35?40:10)*.18+(v<=.3?55:v<=.8?92:v<=1.2?78:v<=1.7?52:v<=2.2?25:8)*.38+(r===null?65:r<=.1?90:r<=1?70:r<=3?40:10)*.06;return {time:h.time,score:Math.round(score),wind:w,wave:v};}).sort((a,b)=>String(a.time).localeCompare(String(b.time)));
+ const scored=hours.map(h=>{const wr=waveForHour(h.time),assessment=calculateFishingAssessment({wind:num(h.wind),gust:num(h.gust),wave:wr?.height??null,rain:num(hourlyPrecipitation(h))});return {time:h.time,assessment,wind:num(h.wind),wave:wr?.height??null};}).sort((x,y)=>String(x.time).localeCompare(String(y.time)));
  if(!scored.length){host.innerHTML='<div class="best-slot" style="grid-column:1/-1"><b>—</b><strong>'+c.none+'</strong></div>';return;}
- const labels=lang==="fr"?{good:"Bon",fair:"Moyen",low:"Faible",missing:"Données insuffisantes",wind:"Vent",wave:"Houle"}:lang==="ar"?{good:"جيد",fair:"متوسط",low:"ضعيف",missing:"بيانات غير كافية",wind:"الرياح",wave:"الأمواج"}:lang==="en"?{good:"Good",fair:"Fair",low:"Poor",missing:"Insufficient data",wind:"Wind",wave:"Waves"}:{good:"Bueno",fair:"Regular",low:"Bajo",missing:"Datos insuficientes",wind:"Viento",wave:"Oleaje"};
- host.innerHTML=scored.map(v=>{const t=String(v.time).match(/T(\d{2}:\d{2})/)?.[1]||"—";if(v.score===null)return '<div class="best-slot"><b>'+t+'</b><strong>'+labels.missing+'</strong><small>—</small></div>';const rating=v.score>=75?labels.good:v.score>=50?labels.fair:labels.low;return '<div class="best-slot"><b>'+t+'</b><strong>'+rating+' · '+v.score+'/100</strong><small>'+labels.wind+' '+v.wind.toFixed(0)+' km/h</small><small>'+labels.wave+' '+v.wave.toFixed(1)+' m</small></div>';}).join("");
+ const labels=lang==="fr"?{good:"Favorable",fair:"Avec prudence",low:"Défavorable",missing:"Données insuffisantes",wind:"Vent",wave:"Houle"}:lang==="ar"?{good:"ملائم",fair:"بحذر",low:"غير ملائم",missing:"بيانات غير كافية",wind:"الرياح",wave:"الأمواج"}:lang==="en"?{good:"Favorable",fair:"With caution",low:"Unfavorable",missing:"Insufficient data",wind:"Wind",wave:"Waves"}:{good:"Favorable",fair:"Con precaución",low:"Desfavorable",missing:"Datos insuficientes",wind:"Viento",wave:"Oleaje"};
+ host.innerHTML=scored.map(v=>{const t=String(v.time).match(/T(\\d{2}:\\d{2})/)?.[1]||"—",a=v.assessment;if(a.score===null)return '<div class="best-slot"><b>'+t+'</b><strong>'+labels.missing+'</strong><small>—</small></div>';const rating=a.category==="favorable"?labels.good:a.category==="caution"?labels.fair:labels.low;return '<div class="best-slot"><b>'+t+'</b><strong>'+rating+' · '+a.score+'/100</strong><small>'+labels.wind+' '+(v.wind===null?"—":v.wind.toFixed(0)+" km/h")+'</small><small>'+labels.wave+' '+(v.wave===null?"—":v.wave.toFixed(1)+" m")+'</small></div>';}).join("");
 }
+
 let fishingLeafletMap=null,fishingMapLayer=null;
 function renderFishingMap(points){
  const list=$("mapLocalityList"),entries=Object.entries(LOCATIONS);
@@ -730,7 +742,7 @@ function renderFishingMap(points){
   fishingLeafletMap.fitBounds(bounds,{padding:[24,24],maxZoom:5});
  }
  fishingMapLayer.clearLayers();
- const colorFor=p=>!p||p.wind===null||p.wave===null?"#94a3b8":p.wind<=14&&p.wave<=1.2?"#34d399":p.wind<=22&&p.wave<=2?"#fbbf24":"#fb7185";
+ const colorFor=p=>fishingAssessmentColor(p?.assessment);
  const open=id=>{$("location").value=id;load();window.scrollTo({top:0,behavior:"smooth"});};
  const ordered=entries.map(([id,l],i)=>({id,l,i:i+1,color:colorFor(points?.[id])}));
  ordered.forEach(v=>{
@@ -747,8 +759,8 @@ let mapLoading=false;
 async function loadFishingMap(){
  if(mapLoading)return;mapLoading=true;$("mapRefresh").disabled=true;$("mapStatus").textContent=mapText("mapLoading");
  const entries=Object.entries(LOCATIONS),results={};let done=0;
- for(let i=0;i<entries.length;i+=4){await Promise.all(entries.slice(i,i+4).map(async([id,l])=>{try{const urls=[API_BASE+"/api/forecast?location="+encodeURIComponent(id)+"&lat="+l.lat+"&lng="+l.lng+"&days=2",API_BASE+"/api/oleaje?location="+encodeURIComponent(id)];const pair=await Promise.allSettled(urls.map(getJson));if(pair[0].status!=="fulfilled")throw Error("forecast unavailable");const n=normalizeForecast(pair[0].value),d=n.days[0],waves=pair[1].status==="fulfilled"?normalizeWaves(pair[1].value).records:[],dayWave=waves.filter(w=>{const ms=Date.parse(w.time);return Number.isFinite(ms)&&new Date(ms+3600000).toISOString().slice(0,10)===d?.date;}),wave=dayWave.length?Math.max(...dayWave.map(w=>w.height)):null;results[id]={wind:num(d?.wind),wave};}catch(e){results[id]=null;}done++;$("mapStatus").textContent=done+" / "+entries.length+" "+mapText("mapProgress");}));}
- renderFishingMap(results);const count=Object.values(results).filter(v=>v&&v.wind!==null&&v.wave!==null).length;$("mapStatus").textContent=count+" / "+entries.length+" "+mapText("mapComplete");$("mapRefresh").disabled=false;mapLoading=false;
+ for(let i=0;i<entries.length;i+=4){await Promise.all(entries.slice(i,i+4).map(async([id,l])=>{try{const urls=[API_BASE+"/api/forecast?location="+encodeURIComponent(id)+"&lat="+l.lat+"&lng="+l.lng+"&days=2",API_BASE+"/api/oleaje?location="+encodeURIComponent(id)];const pair=await Promise.allSettled(urls.map(getJson));if(pair[0].status!=="fulfilled")throw Error("forecast unavailable");const n=normalizeForecast(pair[0].value),d=n.days[0],waves=pair[1].status==="fulfilled"?normalizeWaves(pair[1].value).records:[],dayWave=waves.filter(w=>{const ms=Date.parse(w.time);return Number.isFinite(ms)&&new Date(ms+3600000).toISOString().slice(0,10)===d?.date;}),wave=dayWave.length?Math.max(...dayWave.map(w=>w.height)):null;results[id]={wind:num(d?.wind),gust:num(d?.gustMax??d?.gust),wave,assessment:calculateFishingAssessment({wind:num(d?.wind),gust:num(d?.gustMax??d?.gust),wave,rain:num(d?.rain)})};}catch(e){results[id]=null;}done++;$("mapStatus").textContent=done+" / "+entries.length+" "+mapText("mapProgress");}));}
+ renderFishingMap(results);const count=Object.values(results).filter(v=>v&&v.assessment?.score!==null&&v.assessment?.score!==undefined).length;$("mapStatus").textContent=count+" / "+entries.length+" "+mapText("mapComplete");$("mapRefresh").disabled=false;mapLoading=false;
 }
 
 function isMoroccoToday(date){
@@ -961,9 +973,23 @@ function assistantBuildContext(source={}){
   const date=dateOnly(day.dateLocal||day.date);if(!date||!relevantDates.has(date))return;
   moonByDate[date]={phase:day.moonPhase||null,illumination_percent:num(day.moonIllumination)};
  });
- const hasData=Object.keys(dailyForecastByDate).length||Object.keys(hourlyForecastByDate).length||Object.keys(wavesByDate).length||Object.keys(tidesByDate).length||Object.keys(moonByDate).length;
+ const dailyActivityAssessmentByDate={},hourlyActivityAssessmentByDate={};
+  relevantDays.forEach(day=>{
+   const date=day.date;if(!date)return;
+   const rows=allHours.filter(hour=>dateOnly(hour.time)===date);
+   const gustValues=rows.map(hour=>num(hour.gust)).filter(v=>v!==null);
+   const waveRows=waveRecords.filter(record=>{const ms=Date.parse(record.time);return Number.isFinite(ms)&&new Date(ms+offset).toISOString().slice(0,10)===date;});
+   const maxWave=waveRows.length?Math.max(...waveRows.map(record=>record.height)):null;
+   const maxGust=num(day.gustMax??day.gust)??(gustValues.length?Math.max(...gustValues):null);
+   dailyActivityAssessmentByDate[date]=calculateFishingAssessment({wind:num(day.wind),gust:maxGust,wave:maxWave,rain:num(day.rain)});
+   hourlyActivityAssessmentByDate[date]=rows.map(hour=>{
+    const wave=waveForHour(hour.time);
+    return {time:hour.time,...calculateFishingAssessment({wind:num(hour.wind),gust:num(hour.gust),wave:wave?.height??null,rain:num(hourlyPrecipitation(hour))})};
+   });
+  });
+  const hasData=Object.keys(dailyForecastByDate).length||Object.keys(hourlyForecastByDate).length||Object.keys(wavesByDate).length||Object.keys(tidesByDate).length||Object.keys(moonByDate).length;
  if(!hasData)return null;
- return {selected_location:LOCATIONS[locationCode]?.name||locationCode,selected_date:targetDate||relevantDays[0]?.date||null,forecast_dates:relevantDays.map(day=>day.date).filter(Boolean),daily_forecast_by_date:dailyForecastByDate,hourly_forecast_by_date:hourlyForecastByDate,waves_by_date:wavesByDate,tides_by_date:tidesByDate,moon_by_date:moonByDate,tide_station:sourceTides?.station?.name||null,moon_current_phase:sourceTides?.conditions?.moonPhase||null,moon_current_illumination_percent:num(sourceTides?.conditions?.moonIllumination)};
+ return {selected_location:LOCATIONS[locationCode]?.name||locationCode,selected_date:targetDate||relevantDays[0]?.date||null,forecast_dates:relevantDays.map(day=>day.date).filter(Boolean),daily_forecast_by_date:dailyForecastByDate,hourly_forecast_by_date:hourlyForecastByDate,daily_activity_assessment_by_date:dailyActivityAssessmentByDate,hourly_activity_assessment_by_date:hourlyActivityAssessmentByDate,waves_by_date:wavesByDate,tides_by_date:tidesByDate,moon_by_date:moonByDate,tide_station:sourceTides?.station?.name||null,moon_current_phase:sourceTides?.conditions?.moonPhase||null,moon_current_illumination_percent:num(sourceTides?.conditions?.moonIllumination)};
 }
 async function assistantFetchLocationContext(locationCode,targetDate){
  const loc=LOCATIONS[locationCode];if(!loc)throw new Error("Localidad no reconocida.");
