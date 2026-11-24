@@ -862,6 +862,10 @@ const ASSISTANT_I18N = {
  ar:{launch:"اسأل المساعد",title:"مساعد الصيد",subtitle:"نصائح ومساعدة ببيانات Mar & Pesca",welcome:"مرحباً! اسألني عن الطعوم أو التركيبات أو العقد أو فهم حالة البحر.",placeholder:"اكتب سؤالك…",send:"إرسال",busy:"جارٍ التفكير…",context:"يحدد الموقع والتاريخ من سؤالك، وإذا لم تذكرهما يستخدم الاختيارات المحددة في الموقع.",error:"لم أتمكن من الإجابة الآن. حاول مرة أخرى بعد قليل.",empty:"اكتب سؤالاً أولاً.",close:"إغلاق"}
 };
 let assistantBusy=false;
+// Historial local de esta sesión: solo se envían los últimos turnos necesarios.
+let assistantHistory=[];
+let assistantLastLocation="";
+let assistantLastDate="";
 function assistantText(key){return ASSISTANT_I18N[lang]?.[key]||ASSISTANT_I18N.es[key]||key;}
 function assistantApplyLanguage(){
  const values={assistantLaunchLabel:"launch",assistantTitle:"title",assistantSubtitle:"subtitle",assistantWelcome:"welcome",assistantContextNote:"context",assistantSend:"send",assistantClose:"close"};
@@ -905,7 +909,7 @@ function assistantResolveLocation(question){
   if(alias&&text.includes(" "+alias+" "))matches.push({code,length:alias.length});
  }
  matches.sort((a,b)=>b.length-a.length);
- return matches[0]?.code||$("location").value;
+ return matches[0]?.code||assistantLastLocation||$("location").value;
 }
 function assistantResolveDate(question){
  const text=assistantNormalizeText(question),words=new Set(text.split(" ")),today=assistantLocalToday();
@@ -914,14 +918,17 @@ function assistantResolveDate(question){
  if(words.has("hoy")||words.has("today")||text.includes("aujourd hui")||text.includes("اليوم"))return today;
  const iso=text.match(/([0-9]{4})[ /-]([0-9]{1,2})[ /-]([0-9]{1,2})/);
  if(iso)return iso[1]+"-"+String(iso[2]).padStart(2,"0")+"-"+String(iso[3]).padStart(2,"0");
- const dmy=text.match(/([0-9]{1,2})[ /-]([0-9]{1,2})[ /-](20[0-9]{2})/);
+ const dmy=text.match(/([0-9]{1,2})\s*(?:\/|-|\s+(?:de|del)\s+|\s+)\s*([0-9]{1,2})\s*(?:\/|-|\s+de\s+|\s+)\s*(20[0-9]{2})/);
  if(dmy)return dmy[3]+"-"+String(dmy[2]).padStart(2,"0")+"-"+String(dmy[1]).padStart(2,"0");
+ const monthNames={enero:1,january:1,janvier:1,fevrier:2,february:2,febrero:2,mars:3,marzo:3,march:3,avril:4,abril:4,april:4,mai:5,mayo:5,may:5,juin:6,junio:6,june:6,juillet:7,julio:7,july:7,aout:8,agosto:8,august:8,septembre:9,septiembre:9,september:9,octobre:10,octubre:10,october:10,novembre:11,noviembre:11,november:11,decembre:12,diciembre:12,december:12};
+ const namedDate=text.match(/\b([0-9]{1,2})\s+(?:de\s+)?([a-z]+)\s+(?:de\s+)?(20[0-9]{2})\b/);
+ if(namedDate&&monthNames[namedDate[2]])return namedDate[3]+"-"+String(monthNames[namedDate[2]]).padStart(2,"0")+"-"+String(namedDate[1]).padStart(2,"0");
  const weekdays={domingo:0,sunday:0,dimanche:0,lunes:1,monday:1,lundi:1,martes:2,tuesday:2,mardi:2,miercoles:3,wednesday:3,mercredi:3,jueves:4,thursday:4,jeudi:4,viernes:5,friday:5,vendredi:5,sabado:6,saturday:6,samedi:6};
  const [year,month,day]=today.split("-").map(Number),weekdayNow=new Date(Date.UTC(year,month-1,day)).getUTCDay();
  for(const [name,weekday] of Object.entries(weekdays))if(words.has(name)){
   let delta=(weekday-weekdayNow+7)%7;if(delta===0)delta=7;return assistantAddDays(today,delta);
  }
- return selectedDate||today;
+ return assistantLastDate||selectedDate||today;
 }
 function assistantBuildContext(source={}){
  const sourceForecast=source.forecastData!==undefined?source.forecastData:forecast,sourceTides=source.tideData!==undefined?source.tideData:tidePayload,sourceWaves=source.waveData!==undefined?source.waveData:wavePayload;
@@ -974,6 +981,7 @@ async function assistantSubmit(event){
  assistantBusy=true;$("assistantSend").disabled=true;$("assistantSend").textContent=assistantText("busy");
  const pending=assistantAddMessage(assistantText("busy"),"bot");
  try{
+  // Los seguimientos heredan la localidad y fecha del último intercambio si no indican otras.
   const requestedLocation=assistantResolveLocation(question),requestedDate=assistantResolveDate(question);
   const currentDates=(forecast?.days||[]).map(day=>day.date);
   let context;
@@ -982,11 +990,19 @@ async function assistantSubmit(event){
   }else{
    context=await assistantFetchLocationContext(requestedLocation,requestedDate);
   }
-  const payload={question,language:lang,location:requestedLocation,date:requestedDate,context};
+  const history=assistantHistory.slice(-12);
+  const payload={question,language:lang,location:requestedLocation,date:requestedDate,context,history};
   const response=await fetch(ASSISTANT_API_BASE+"/api/chat",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify(payload)});
   const result=await response.json().catch(()=>({}));
   if(!response.ok||result.ok!==true)throw new Error(result.error||"HTTP "+response.status);
-  pending.textContent=String(result.answer||"");if(!pending.textContent)pending.textContent=assistantText("error");
+  const answer=String(result.answer||"").trim();
+  pending.textContent=answer||assistantText("error");
+  if(answer){
+   assistantHistory.push({role:"user",content:question},{role:"assistant",content:answer});
+   assistantHistory=assistantHistory.slice(-12);
+   assistantLastLocation=requestedLocation;
+   assistantLastDate=requestedDate;
+  }
  }catch(error){
   pending.textContent=assistantText("error");pending.classList.add("error");
   console.error("Mar & Pesca assistant request failed:",error);
