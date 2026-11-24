@@ -874,61 +874,102 @@ function assistantAddMessage(text,role="bot",isError=false){
 }
 function assistantBuildContext(){
  const days=forecast?.days||[];
+ if(!days.length)return null;
+
+ // El asistente necesita contexto cercano a la fecha elegida, no el mes
+ // completo de mareas ni todas las horas y registros de oleaje.
+ let selectedIndex=days.findIndex(day=>day.date===selectedDate);
+ if(selectedIndex<0)selectedIndex=0;
+ const relevantDays=days.slice(selectedIndex,selectedIndex+3);
+ const relevantDates=new Set(relevantDays.map(day=>day.date).filter(Boolean));
  const allHours=forecast?.hours||[];
  const dailyForecastByDate={};
  const hourlyForecastByDate={};
- days.forEach(day=>{
+
+ relevantDays.forEach(day=>{
   const date=day.date;
   if(!date)return;
   dailyForecastByDate[date]={
-   temperature_min_c:num(day.tmin),temperature_max_c:num(day.tmax),
-   wind_max_kmh:num(day.wind),gust_min_kmh:num(day.gustMin),
-   gust_max_kmh:num(day.gustMax),precipitation_mm:num(day.rain),
-   pressure_hpa:num(day.pressure),weather_code:day.code??null
+   temperature_min_c:num(day.tmin),
+   temperature_max_c:num(day.tmax),
+   wind_max_kmh:num(day.wind),
+   gust_min_kmh:num(day.gustMin),
+   gust_max_kmh:num(day.gustMax),
+   precipitation_mm:num(day.rain),
+   pressure_hpa:num(day.pressure),
+   weather_code:day.code??null
   };
-  const rows=allHours.filter(h=>dateOnly(h.time)===date);
-  if(rows.length)hourlyForecastByDate[date]=rows.filter((h,i)=>i%2===0).slice(0,12).map(h=>({
-   time:h.time,temperature_c:num(h.temp),wind_kmh:num(h.wind),
-   gust_kmh:num(h.gust),rain_mm:num(hourlyPrecipitation(h)),
-   wind_direction_deg:num(h.dir)
+
+  const rows=allHours.filter(hour=>dateOnly(hour.time)===date);
+  // Ocho puntos horarios por día bastan para describir la evolución
+  // sin enviar las 24 observaciones completas.
+  const sampled=rows.filter((hour,index)=>index%3===0).slice(0,8);
+  if(sampled.length)hourlyForecastByDate[date]=sampled.map(hour=>({
+   time:hour.time,
+   temperature_c:num(hour.temp),
+   wind_kmh:num(hour.wind),
+   gust_kmh:num(hour.gust),
+   rain_mm:num(hourlyPrecipitation(hour)),
+   wind_direction_deg:num(hour.dir)
   }));
  });
+
  const wavesByDate={};
- days.forEach(day=>{
+ relevantDays.forEach(day=>{
   const records=wavesForDate(day.date);
-  if(records.length)wavesByDate[day.date]={
-   height_min_m:Math.min(...records.map(w=>w.height)),
-   height_max_m:Math.max(...records.map(w=>w.height)),
-   periods_s:records.map(w=>w.period).filter(v=>v!==null),
-   directions_deg:records.map(w=>w.direction).filter(v=>v!==null)
+  if(!records.length)return;
+  const heights=records.map(record=>record.height).filter(Number.isFinite);
+  const periods=records.map(record=>record.period).filter(Number.isFinite);
+  const directions=records.map(record=>record.direction).filter(Number.isFinite);
+  let meanDirection=null;
+  if(directions.length){
+   const radians=directions.map(value=>value*Math.PI/180);
+   const x=radians.reduce((sum,value)=>sum+Math.cos(value),0);
+   const y=radians.reduce((sum,value)=>sum+Math.sin(value),0);
+   meanDirection=(Math.atan2(y,x)*180/Math.PI+360)%360;
+  }
+  wavesByDate[day.date]={
+   height_min_m:heights.length?Math.min(...heights):null,
+   height_max_m:heights.length?Math.max(...heights):null,
+   period_min_s:periods.length?Math.min(...periods):null,
+   period_max_s:periods.length?Math.max(...periods):null,
+   mean_direction_deg:meanDirection
   };
  });
+
  const tidesByDate={};
- (tidePayload?.extremes||[]).forEach(e=>{
-  const date=e.localDate||dateOnly(e.localTime||e.time);
-  if(!date)return;
+ (tidePayload?.extremes||[]).forEach(extreme=>{
+  const date=extreme.localDate||dateOnly(extreme.localTime||extreme.time);
+  if(!date||!relevantDates.has(date))return;
   if(!tidesByDate[date])tidesByDate[date]=[];
   tidesByDate[date].push({
-   type:e.type||null,time:e.localTime||e.time||null,
-   height_m:num(e.height)
+   type:extreme.type||null,
+   time:extreme.localTime||extreme.time||null,
+   height_m:num(extreme.height)
   });
  });
+
  const moonByDate={};
- (tidePayload?.daily||[]).forEach(d=>{
-  const date=dateOnly(d.dateLocal||d.date);
-  if(date)moonByDate[date]={
-   phase:d.moonPhase||null,
-   illumination_percent:num(d.moonIllumination)
+ (tidePayload?.daily||[]).forEach(day=>{
+  const date=dateOnly(day.dateLocal||day.date);
+  if(!date||!relevantDates.has(date))return;
+  moonByDate[date]={
+   phase:day.moonPhase||null,
+   illumination_percent:num(day.moonIllumination)
   };
  });
+
  const hasData=Object.keys(dailyForecastByDate).length||
-  Object.keys(hourlyForecastByDate).length||Object.keys(wavesByDate).length||
-  Object.keys(tidesByDate).length||Object.keys(moonByDate).length;
+  Object.keys(hourlyForecastByDate).length||
+  Object.keys(wavesByDate).length||
+  Object.keys(tidesByDate).length||
+  Object.keys(moonByDate).length;
  if(!hasData)return null;
+
  return {
   selected_location:LOCATIONS[$("location").value]?.name||$("location").value,
-  selected_date:selectedDate||null,
-  forecast_dates:days.map(d=>d.date),
+  selected_date:selectedDate||relevantDays[0]?.date||null,
+  forecast_dates:relevantDays.map(day=>day.date).filter(Boolean),
   daily_forecast_by_date:dailyForecastByDate,
   hourly_forecast_by_date:hourlyForecastByDate,
   waves_by_date:wavesByDate,
