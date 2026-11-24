@@ -988,7 +988,9 @@ function assistantBuildContext(source={}){
    const validScores=hourlyAssessments.filter(item=>item.score!==null).map(item=>item.score);
    const dailyScore=validScores.length?Math.round(validScores.reduce((sum,value)=>sum+value,0)/validScores.length):null;
    dailyActivityAssessmentByDate[date]=dailyScore===null?{score:null,category:"insufficient_data",label:"Datos insuficientes",factors:[]}:{score:dailyScore,category:dailyScore>=80?"favorable":dailyScore>=55?"caution":"unfavorable",factors:[],sample_count:validScores.length};
-   hourlyActivityAssessmentByDate[date]=hourlyAssessments;
+   // Mantener las 24 horas del día consultado; no enviar 48 horas adicionales
+   // de evaluaciones horarias que inflan el contexto sin aportar al día seleccionado.
+   if(date===targetDate)hourlyActivityAssessmentByDate[date]=hourlyAssessments;
   });
   const hasData=Object.keys(dailyForecastByDate).length||Object.keys(hourlyForecastByDate).length||Object.keys(wavesByDate).length||Object.keys(tidesByDate).length||Object.keys(moonByDate).length;
  if(!hasData)return null;
