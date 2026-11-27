@@ -951,7 +951,7 @@ function assistantBuildContext(source={}){
  const locationCode=source.locationCode||$("location").value,targetDate=dateOnly(source.targetDate||selectedDate);
  const days=sourceForecast?.days||[];
  if(!days.length&&!sourceTides&&!sourceWaves)return null;
- const index=days.findIndex(day=>day.date===targetDate);
+ const index=days.findIndex(day=>dateOnly(day.date)===targetDate);
  const relevantDays=index<0?[]:[days[index]],relevantDates=new Set(relevantDays.map(day=>day.date).filter(Boolean));
  if(targetDate)relevantDates.add(targetDate);
  const dailyForecastByDate={},hourlyForecastByDate={},allHours=sourceForecast?.hours||[];
@@ -1010,7 +1010,7 @@ function assistantLimitContext(context,maxChars=8500){
  Object.values(compact.hourly_activity_assessment_by_date||{}).forEach(rows=>{
   if(Array.isArray(rows))rows.forEach(item=>{if(item&&typeof item==="object")delete item.factors;});
  });
- Object.values(compact.hourly_forecast_by_date||{}).forEach(rows=>{if(Array.isArray(rows)&&rows.length>4)rows.splice(4);});
+ Object.values(compact.hourly_forecast_by_date||{}).forEach(rows=>{if(Array.isArray(rows)&&rows.length>24)rows.splice(24);});
  Object.values(compact.tides_by_date||{}).forEach(rows=>{if(Array.isArray(rows)&&rows.length>6)rows.splice(6);});
  if(size()>maxChars)delete compact.hourly_forecast_by_date;
  if(size()>maxChars){delete compact.moon_current_illumination_percent;delete compact.moon_current_phase;delete compact.tide_station;}
