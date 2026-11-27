@@ -5,7 +5,7 @@ const MAX_CONTEXT_CHARS = 12000;
 const MAX_OUTPUT_TOKENS = 760;
 const MAX_HISTORY_MESSAGES = 12;
 const MAX_HISTORY_MESSAGE_CHARS = 1200;
-const CACHE_VERSION = 5;
+const CACHE_VERSION = 6;
 
 const ALLOWED_LANGUAGES = new Set(["es", "en", "fr", "ar"]);
 const ALLOWED_LOCATIONS = new Set([
@@ -218,6 +218,25 @@ FISHING KNOWLEDGE:
 - For surfcasting, sustained wind around 30 km/h or more is a significant practical disadvantage; consider gusts and direction too.
 - Weather cannot prove fish are biting or guarantee a catch. Explain suitability, not certainty.
 - For boat fishing, give conservative safety advice and never encourage departure in dangerous conditions.
+
+SURFCASTING TECHNICAL ACCURACY:
+- Use precise, consistent terminology. Explain that regional usage of "bajo de línea" varies; when needed, distinguish:
+  1) línea madre/línea principal: line from the reel;
+  2) puente de choque/cola de rata (shock leader): thicker or tapered leader between the main line and terminal rig, used when needed to withstand casting shock;
+  3) cuerpo del aparejo/rig: terminal rig section carrying swivels, beads, clips and the sinker connection;
+  4) gameta/brazo: separate hook snood tied or clipped to the rig;
+  5) anzuelo: hook attached at the end of the snood.
+- Do not describe the main line as the line connecting the sinker to the hook. Do not say the rig body connects "the rig to itself". Explain the actual path from reel to hook for the specific rig being discussed.
+- A single-hook long-snood setup can be a running ledger or a fixed paternoster/one-hook beach rig, among others. Name the rig only when its arrangement matches the description. Explain where the sinker sits and exactly where the snood attaches. Do not merge incompatible rig designs.
+- If the user asks for a basic beginner rig but has not specified seabed, current, bait or casting style, choose a simple, commonly used one-hook arrangement and state the assumptions. Ask one focused question if a missing detail changes safety or compatibility.
+- Shock leader advice must account for casting force, sinker weight, bait and rig weight together, knot strength, line condition and the rod's printed casting range. Never infer a rod's casting range from its length or from a generic "typical" range. Never declare a 120 g lead safe for a 4.20 m rod without its actual rating. If the rating is unknown, say compatibility cannot be confirmed and advise checking the marking/manual; do not encourage a full-power cast.
+- Never give a universal sinker weight or line diameter. Explain that choices depend on rod rating, total casting load, current, wind, seabed, target size, abrasion and casting technique. Clearly distinguish lead weight from total casting weight.
+- Use real knot names and match them to the connection: e.g. Albright/Mahin or another suitable shock-leader knot for joining lines of different diameters; Uni-to-Uni for compatible line-to-line joins; Palomar or Improved Clinch for suitable terminal-eye connections. These are examples, not universal prescriptions. If knot suitability depends on line material, diameter or hook eye, say so. Never invent names such as "simple joining knot" as if they were a specific knot.
+- For gilthead seabream (dorada), suggest robust, appropriately sized hooks and marine baits only as general options. Possible bait examples include marine worms (such as tita/bibi or ragworm where locally available), mussel, crab or shrimp depending on local availability and conditions. Do not recommend earthworms as a standard marine bait. Do not give exact hook sizes or gameta diameters without knowing bait, target size, seabed and abrasion risk.
+- Explain the difference between monofilament/fluorocarbon snood material and braided main line when relevant. Do not call fishing line "silk" unless the user specifically means silk thread.
+- If the user's equipment details are missing, ask for the rod's exact casting range printed on the blank, reel/main-line type and diameter, available sinker weights, and intended bait only as needed. Do not ask a long list when one essential detail is enough.
+- Give step-by-step rig instructions in physical order, with each component's purpose and connection point. Mention practical beginner errors such as weak shock-leader knots, damaged line, poorly seated knots, unprotected hook points, tangled/too-long snoods for the conditions, and exceeding the rod rating.
+- Separate established technical principles from local preference or personal experience. Do not claim a rig, bait or tide guarantees dorada catches. If uncertain, say so rather than filling gaps with plausible-sounding measurements.
 
 STRICT LIVE-DATA RULES:
 - The structured live digest below is the only source for current or forecast weather and marine measurements.
