@@ -948,7 +948,7 @@ function assistantResolveDate(question){
 }
 function assistantBuildContext(source={}){
  const sourceForecast=source.forecastData!==undefined?source.forecastData:forecast,sourceTides=source.tideData!==undefined?source.tideData:tidePayload,sourceWaves=source.waveData!==undefined?source.waveData:wavePayload;
- const locationCode=source.locationCode||$("location").value,targetDate=source.targetDate||selectedDate;
+ const locationCode=source.locationCode||$("location").value,targetDate=dateOnly(source.targetDate||selectedDate);
  const days=sourceForecast?.days||[];
  if(!days.length&&!sourceTides&&!sourceWaves)return null;
  const index=days.findIndex(day=>day.date===targetDate);
@@ -958,8 +958,8 @@ function assistantBuildContext(source={}){
  relevantDays.forEach(day=>{
   const date=day.date;if(!date)return;
   dailyForecastByDate[date]={temperature_min_c:num(day.tmin),temperature_max_c:num(day.tmax),wind_max_kmh:num(day.wind),gust_min_kmh:num(day.gustMin),gust_max_kmh:num(day.gustMax),precipitation_mm:num(day.rain),pressure_hpa:num(day.pressure),weather_code:day.code??null};
-  const rows=allHours.filter(hour=>dateOnly(hour.time)===date),sampled=rows.filter((hour,i)=>i%3===0).slice(0,8);
-  if(sampled.length)hourlyForecastByDate[date]=sampled.map(hour=>({time:hour.time,temperature_c:num(hour.temp),wind_kmh:num(hour.wind),gust_kmh:num(hour.gust),rain_mm:num(hourlyPrecipitation(hour)),wind_direction_deg:num(hour.dir)}));
+  const rows=allHours.filter(hour=>dateOnly(hour.time)===date);
+  if(rows.length)hourlyForecastByDate[date]=rows.slice(0,24).map(hour=>({time:hour.time,temperature_c:num(hour.temp),wind_kmh:num(hour.wind),gust_kmh:num(hour.gust),rain_mm:num(hourlyPrecipitation(hour)),wind_direction_deg:num(hour.dir)}));
  });
  const offset=(sourceForecast?.utcOffsetSeconds??3600)*1000,waveRecords=sourceWaves?.records||[],wavesByDate={};
  for(const date of relevantDates){
@@ -986,15 +986,22 @@ function assistantBuildContext(source={}){
     const assessment=calculateFishingAssessment({wind:num(hour.wind),gust:num(hour.gust),wave:wave?.height??null,rain:num(hourlyPrecipitation(hour))});return {time:timeOnly(hour.time),score:assessment.score,category:assessment.category,factors:(assessment.factors||[]).map(f=>({key:f.key,score:f.score}))};
    });
    const validScores=hourlyAssessments.filter(item=>item.score!==null).map(item=>item.score);
-   const dailyScore=validScores.length?Math.round(validScores.reduce((sum,value)=>sum+value,0)/validScores.length):null;
-   dailyActivityAssessmentByDate[date]=dailyScore===null?{score:null,category:"insufficient_data",label:"Datos insuficientes",factors:[]}:{score:dailyScore,category:dailyScore>=80?"favorable":dailyScore>=55?"caution":"unfavorable",factors:[],sample_count:validScores.length};
+   const maxOf=values=>{const valid=values.map(num).filter(value=>value!==null&&Number.isFinite(value));return valid.length?Math.max(...valid):null;};
+   const fallbackWind=num(day.wind)??maxOf(rows.map(hour=>hour.wind));
+   const fallbackGust=num(day.gustMax??day.gust)??maxOf(rows.map(hour=>hour.gust));
+   const dateWaveHeights=waveRecords.filter(record=>{const ms=Date.parse(record.time);return Number.isFinite(ms)&&new Date(ms+offset).toISOString().slice(0,10)===date;}).map(record=>record.height).filter(Number.isFinite);
+   const fallbackWave=dateWaveHeights.length?Math.max(...dateWaveHeights):null;
+   const fallbackAssessment=calculateFishingAssessment({wind:fallbackWind,gust:fallbackGust,wave:fallbackWave,rain:num(day.rain)});
+   const dailyScore=validScores.length?Math.round(validScores.reduce((sum,value)=>sum+value,0)/validScores.length):fallbackAssessment.score;
+   const dailyCategory=dailyScore===null?"insufficient_data":dailyScore>=80?"favorable":dailyScore>=55?"caution":"unfavorable";
+   dailyActivityAssessmentByDate[date]={score:dailyScore,category:dailyCategory,label:dailyCategory==="insufficient_data"?"Datos insuficientes":dailyCategory==="favorable"?"Favorable":dailyCategory==="caution"?"Aceptable con precaución":"Desfavorable",factors:[],sample_count:validScores.length};
    // Mantener las 24 horas del día consultado; no enviar 48 horas adicionales
    // de evaluaciones horarias que inflan el contexto sin aportar al día seleccionado.
    if(date===targetDate)hourlyActivityAssessmentByDate[date]=hourlyAssessments;
   });
   const hasData=Object.keys(dailyForecastByDate).length||Object.keys(hourlyForecastByDate).length||Object.keys(wavesByDate).length||Object.keys(tidesByDate).length||Object.keys(moonByDate).length;
  if(!hasData)return null;
- return {selected_location:LOCATIONS[locationCode]?.name||locationCode,selected_date:targetDate||relevantDays[0]?.date||null,forecast_dates:relevantDays.map(day=>day.date).filter(Boolean),daily_forecast_by_date:dailyForecastByDate,hourly_forecast_by_date:hourlyForecastByDate,daily_activity_assessment_by_date:dailyActivityAssessmentByDate,hourly_activity_assessment_by_date:hourlyActivityAssessmentByDate,waves_by_date:wavesByDate,tides_by_date:tidesByDate,moon_by_date:moonByDate,tide_station:sourceTides?.station?.name||null,moon_current_phase:sourceTides?.conditions?.moonPhase||null,moon_current_illumination_percent:num(sourceTides?.conditions?.moonIllumination)};
+ return {selected_location:LOCATIONS[locationCode]?.name||locationCode,selected_location_code:locationCode,selected_date:targetDate||relevantDays[0]?.date||null,forecast_dates:relevantDays.map(day=>day.date).filter(Boolean),daily_forecast_by_date:dailyForecastByDate,hourly_forecast_by_date:hourlyForecastByDate,daily_activity_assessment_by_date:dailyActivityAssessmentByDate,hourly_activity_assessment_by_date:hourlyActivityAssessmentByDate,waves_by_date:wavesByDate,tides_by_date:tidesByDate,moon_by_date:moonByDate,tide_station:sourceTides?.station?.name||null,moon_current_phase:sourceTides?.conditions?.moonPhase||null,moon_current_illumination_percent:num(sourceTides?.conditions?.moonIllumination)};
 }
 function assistantLimitContext(context,maxChars=8500){
  if(!context||typeof context!=="object")return context;
@@ -1007,15 +1014,6 @@ function assistantLimitContext(context,maxChars=8500){
  Object.values(compact.tides_by_date||{}).forEach(rows=>{if(Array.isArray(rows)&&rows.length>6)rows.splice(6);});
  if(size()>maxChars)delete compact.hourly_forecast_by_date;
  if(size()>maxChars){delete compact.moon_current_illumination_percent;delete compact.moon_current_phase;delete compact.tide_station;}
- if(size()>maxChars){
-  Object.values(compact.hourly_activity_assessment_by_date||{}).forEach(rows=>{
-   if(Array.isArray(rows)&&rows.length>16){
-    const step=(rows.length-1)/15;
-    const selected=Array.from({length:16},(_,i)=>rows[Math.round(i*step)]);
-    rows.splice(0,rows.length,...selected);
-   }
-  });
- }
  const finalSize=size();
  if(finalSize>maxChars)throw new Error("El contexto de previsión sigue siendo demasiado grande ("+finalSize+" caracteres).");
  return compact;
