@@ -23,7 +23,7 @@ const LANGUAGE_NAMES = {
 };
 
 const LIVE_QUESTION_PATTERN =
-  /weather|forecast|wind|gust|wave|swell|tide|sea state|tomorrow|today|tonight|viento|rachas|oleaje|olas|mareas|marea|mañana|hoy|esta noche|tiempo|meteo|previsión|pronóstico|vent|houle|vagues|marée|demain|aujourd'hui|météo|طقس|رياح|أمواج|مد|غدا|اليوم/i;
+  /weather|forecast|wind|gust|wave|swell|tide|sea state|moon|lunar|today|tomorrow|tonight|conditions|fishing activity|fishing score|best time|sea temperature|sst|viento|rachas|oleaje|olas|mareas|marea|luna|fase lunar|actividad de pesca|puntuacion|nota|mejor hora|mejores horas|temperatura del mar|condiciones|mañana|hoy|esta noche|tiempo|meteo|previsión|pronóstico|vent|houle|vagues|marée|lune|phase lunaire|activité de pêche|meilleure heure|température de la mer|demain|aujourd'hui|météo|طقس|رياح|أمواج|مد|قمر|حالة البحر|نشاط الصيد|أفضل وقت|درجة حرارة البحر|غدا|اليوم/i;
 
 function getAllowedOrigins(env) {
   const configured = String(
@@ -356,18 +356,20 @@ export default {
       return json({ ok: false, code: "CONTEXT_TOO_LARGE", error: "Forecast context is too large." }, 413, headers);
     }
 
-    if (context && (
-      context.selected_date !== date ||
-      context.selected_location_code !== location
-    )) {
+    const contextMatchesRequest = !context || (
+      context.selected_date === date &&
+      context.selected_location_code === location
+    );
+    if (!contextMatchesRequest && LIVE_QUESTION_PATTERN.test(question)) {
       return json({
         ok: false,
         code: "CONTEXT_MISMATCH",
         error: "The supplied forecast context does not match the requested location and date."
       }, 409, headers);
     }
+    const safeContext = contextMatchesRequest ? context : null;
 
-    const digest = context ? buildContextDigest(context, date) : null;
+    const digest = safeContext ? buildContextDigest(safeContext, date) : null;
     const liveDataAvailable = digest ? hasAnyDigestData(digest) : false;
     if (!liveDataAvailable && LIVE_QUESTION_PATTERN.test(question)) {
       return json({
@@ -386,7 +388,7 @@ export default {
       language,
       location,
       date,
-      context: context || null,
+      context: safeContext || null,
       history
     });
     const cacheKey = "assistant:v" + CACHE_VERSION + ":" + await sha256(cacheMaterial);
@@ -408,7 +410,7 @@ export default {
 
     try {
       const result = await env.AI.run(MODEL, {
-        messages: buildMessages({ question, language, location, date, context, history }),
+        messages: buildMessages({ question, language, location, date, context: safeContext, history }),
         max_tokens: MAX_OUTPUT_TOKENS,
         temperature: 0.25,
         top_p: 0.9
